@@ -58,24 +58,39 @@ def strip_usage_line(line):
     line = re.sub('=.*?( |$)', ' ', line)
     return line
 
-def get_usage_lines(cmd):
+def get_usage(cmd):
     cmd_procecss = subprocess.Popen(cmd + " --help", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     if cmd_procecss.wait() != 0:
         raise DocopyCompletionException("Command does not exist or command help failed")
-    usage_lines = cmd_procecss.stdout.readlines()
-    usage_lines = usage_lines[1:]
-    try:
-        usage_lines = usage_lines[:usage_lines.index("Options:\n")]
-    except ValueError:
-        pass
+    usage_lines = cmd_procecss.stdout.read()
+    usage_lines = usage_lines
     return usage_lines
+
+def split_usage_lines(usage):
+    # splits to two lists of lines: one for "Usage" and one for "Options"
+    usage = usage.split("Usage:", 1)[-1]
+    usage_and_options = usage.split("Options:", 1)
+    if len(usage_and_options) == 1:     # no Options section
+        usage_and_options.append("")
+    usage, options = usage_and_options
+    usage_lines = usage.strip().splitlines()
+    options_lines = options.strip().splitlines()
+    return usage_lines, options_lines
+
+def parse_option_lines(options_lines):
+    def sanitize_line(line):
+        line = re.sub('=.*?( |$)', ' ', line)
+        return line.replace("'", "'\\''").replace('[', '\\[').replace(']', '\\]').strip().split(None, 1)
+    return dict(sanitize_line(line) for line in options_lines)
 
 def parse_params(cmd):
     # this function creates an argument tree for the target docopt tool.
     # an argument tree is an "argument dictionary", which contains two items:
     #  "argumnets": list of optional arguments
     #  "subcommands": dictionary of command-name -> another "argument dictionary" of the command
-    usage_lines = get_usage_lines(cmd)
+    # this function also returns a second parameter, which is a dictionary of option->option help string
+    usage = get_usage(cmd)
+    usage_lines, options_lines = split_usage_lines(usage)
     param_tree = {}
     for line in usage_lines:
         line = strip_usage_line(line)
@@ -88,11 +103,16 @@ def parse_params(cmd):
             else:
                 current_tree.setdefault("subcommands", {}).setdefault(arg, {})
                 current_tree = current_tree["subcommands"][arg]
-    return param_tree
+    return param_tree, parse_option_lines(options_lines)
 
-def create_arg_menu(args):
+def create_arg_menu(args, option_help):
     # this menu is added to the _arguments call and describes the optional arguments
-    return '\n'.join(["\t\t'({}){}' \\".format(arg, arg) for arg in args])
+    show_help = all(arg in option_help for arg in args) # show help only if all options have help
+    def get_help_opt(arg):
+        if not show_help or arg not in option_help:
+            return ''
+        return "[{}]".format(option_help[arg])
+    return '\n'.join(["\t\t'({}){}{}' \\".format(arg, arg, get_help_opt(arg)) for arg in args])
 
 def create_subcommand_menu(cmd_name, subcmds):
     # the subcommand menu is added to the switch-case of line[1], which tests the next subcommand.
@@ -104,11 +124,11 @@ def create_subcommand_list(subcmds):
     # the next completion options. It includes all the next available sub-commands
     return '\n'.join(["\t\t\t\t'{}'".format(subcmd) for subcmd in subcmds])
 
-def create_section(cmd_name, param_tree):
+def create_section(cmd_name, param_tree, option_help):
     subcommands = param_tree.get("subcommands", {})
     args = param_tree.get("arguments", [])
     if args:
-        arg_list = '\n' + create_arg_menu(args)
+        arg_list = '\n' + create_arg_menu(args, option_help)
     else:
         arg_list = ""
     if subcommands:
@@ -123,7 +143,7 @@ def create_section(cmd_name, param_tree):
                                   arg_list=arg_list,
                                   subcommand_switch=subcommand_switch)
     for subcommand_name, subcommand_tree in subcommands.items():
-        res += create_section("{}-{}".format(cmd_name, subcommand_name), subcommand_tree)
+        res += create_section("{}-{}".format(cmd_name, subcommand_name), subcommand_tree, option_help)
     return res
 
 def get_completion_filepath(cmd):
@@ -140,8 +160,8 @@ def get_completion_filepath(cmd):
     return os.path.join(completion_path, "_{}".format(cmd))
 
 def create_completion_file(cmd):
-    param_tree = parse_params(cmd)
-    completion_file_content = create_section(cmd, param_tree)
+    param_tree, option_help = parse_params(cmd)
+    completion_file_content = create_section(cmd, param_tree, option_help)
     completion_file_content = FILE_TEMPLATE.format(cmd, completion_file_content, cmd)
     file_path = get_completion_filepath(cmd)
     open(file_path, "wb").write(completion_file_content)
