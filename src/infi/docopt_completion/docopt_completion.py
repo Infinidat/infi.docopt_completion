@@ -1,7 +1,7 @@
 import sys
 from bash import BashCompletion
 from zsh import OhMyZshCompletion, ZshPreztoCompletion
-from common import parse_params
+from common import DocoptCompletionException, parse_params
 
 def main():
     if len(sys.argv) != 2:
