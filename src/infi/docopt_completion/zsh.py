@@ -43,17 +43,12 @@ SUBCOMMAND_SWITCH_TEMPLATE = """'*::options:->options'
 	esac
 """
 
-class OhMyZshCompletion(CompletionGenerator):
+class ZshCompletion(CompletionGenerator):
     def completion_path_exists(self):
-        return os.path.exists(os.path.expanduser('~/.oh-my-zsh'))
+        raise NotImplementedError()       # implemented in subclasses
     
     def get_completion_filepath(self, cmd):
-        # completion paths are paths under the $fpath variable of zsh. However since we can't get $fpath, we
-        # try to use the default path
-        completion_path = os.path.expanduser('~/.oh-my-zsh/completions')
-        if not os.path.exists(completion_path):
-            os.makedirs(completion_path)
-        return os.path.join(completion_path, "_{}".format(cmd))
+        raise NotImplementedError()       # implemented in subclasses
     
     def create_arg_menu(self, args, option_help):
         # this menu is added to the _arguments call and describes the optional arguments
@@ -102,8 +97,20 @@ class OhMyZshCompletion(CompletionGenerator):
     def get_completion_file_content(self, cmd, param_tree, option_help):
         completion_file_inner_content = self.create_section(cmd, param_tree, option_help)
         return FILE_TEMPLATE.format(cmd, completion_file_inner_content, cmd)
-        
-class ZshPreztoCompletion(OhMyZshCompletion):
+    
+class OhMyZshCompletion(ZshCompletion):
+    def completion_path_exists(self):
+        return os.path.exists(os.path.expanduser('~/.oh-my-zsh'))
+    
+    def get_completion_filepath(self, cmd):
+        # completion paths are paths under the $fpath variable of zsh. However since we can't get $fpath, we
+        # try to use the default path
+        completion_path = os.path.expanduser('~/.oh-my-zsh/completions')
+        if not os.path.exists(completion_path):
+            os.makedirs(completion_path)
+        return os.path.join(completion_path, "_{}".format(cmd))
+
+class ZshPreztoCompletion(ZshCompletion):
     def completion_path_exists(self):
         return os.path.exists(os.path.expanduser('~/.zprezto'))
     
