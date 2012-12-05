@@ -15,10 +15,10 @@ _{cmd_name}()
 }}
 """
 
-SUBCOMMAND_CASE_TEMPLATE = """
+SUBCOMMAND_SWITCH_TEMPLATE = """
     else
         case ${{COMP_WORDS[{level_num}]}} in
-{subcommand_menu}
+{subcommand_cases}
         esac 
 """
 
@@ -36,10 +36,10 @@ class BashCompletion(CompletionGenerator):
     def create_subcommand_switch(self, cmd_name, level_num, subcommands, args):
         if len(subcommands) == 0:
             return ""
-        subcommand_menu = '\n'.join(CASE_TEMPLATE.format(subcommand,
-                                                                     cmd_name,
-                                                                     subcommand) for subcommand in subcommands)
-        return SUBCOMMAND_CASE_TEMPLATE.format(level_num=level_num, subcommand_menu=subcommand_menu)
+        subcommand_cases = '\n'.join(CASE_TEMPLATE.format(subcommand,
+                                                           cmd_name,
+                                                           subcommand) for subcommand in subcommands)
+        return SUBCOMMAND_SWITCH_TEMPLATE.format(level_num=level_num, subcommand_cases=subcommand_cases)
     
     def create_compreply(self, subcommands, args):
         return " ".join(args) + " ".join(subcommands.keys())

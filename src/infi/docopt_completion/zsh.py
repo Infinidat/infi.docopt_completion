@@ -37,7 +37,7 @@ SUBCOMMAND_SWITCH_TEMPLATE = """'*::options:->options'
 
 		(options)
 			case $line[1] in
-{subcommand_menu}
+{subcommand_cases}
 			esac
 		;;
 	esac
@@ -62,19 +62,29 @@ class ZshCompletion(CompletionGenerator):
                 return ''
             return "[{}]".format(option_help[arg])
         def decorate_arg(arg):
-            # add "-" to args that end with "=". '=-' to _arguments means that "=" is appended to the option upon completion            
+            # add "-" to args that end with "="
+            # '=-' to _arguments means that "=" is appended to the option upon completion            
             return (arg + "-") if arg.endswith("=") else arg
         return '\n'.join(["\t\t'({0}){0}{1}' \\".format(decorate_arg(arg), get_help_opt(arg)) for arg in args])
     
-    def create_subcommand_menu(self, cmd_name, subcmds):
+    def create_subcommand_cases(self, cmd_name, subcmds):
         # the subcommand menu is added to the switch-case of line[1], which tests the next subcommand.
         # the switch-case directs the next sub-command to its relevant section (function)
         return '\n'.join([CASE_TEMPLATE.format(cmd, cmd_name, cmd) for cmd in subcmds])
     
     def create_subcommand_list(self, subcmds):
-        # the subcommand list is filled into the "subcommands" variable which is sent to the _describe command, to specify
-        # the next completion options. It includes all the next available sub-commands
+        # the subcommand list is filled into the "subcommands" variable which is sent to the _describe command,
+        # to specify the next completion options. It includes all the next available sub-commands
         return '\n'.join(["\t\t\t\t'{}'".format(subcmd) for subcmd in subcmds])
+    
+    def create_subcommand_switch(self, cmd_name, subcommands):
+        if len(subcommands) == 0:
+            return ""
+        subcommand_list = self.create_subcommand_list(subcommands.keys())
+        subcommand_cases = self.create_subcommand_cases(cmd_name, subcommands.keys())
+        return SUBCOMMAND_SWITCH_TEMPLATE.format(subcommand_list=subcommand_list,
+                                                 subcommand_cases=subcommand_cases,
+                                                 subcommand=cmd_name.replace('-', ' '))
     
     def create_section(self, cmd_name, param_tree, option_help):
         subcommands = param_tree.subcommands
@@ -83,14 +93,7 @@ class ZshCompletion(CompletionGenerator):
             arg_list = '\n' + self.create_arg_menu(args, option_help)
         else:
             arg_list = ""
-        if subcommands:
-            subcommand_list = self.create_subcommand_list(subcommands.keys())
-            subcommand_menu = self.create_subcommand_menu(cmd_name, subcommands.keys())
-            subcommand_switch = SUBCOMMAND_SWITCH_TEMPLATE.format(subcommand_list=subcommand_list,
-                                                                  subcommand_menu=subcommand_menu,
-                                                                  subcommand=cmd_name.replace('-', ' '))
-        else:
-            subcommand_switch = ""
+        subcommand_switch = self.create_subcommand_switch(cmd_name, subcommands)
         res = SECTION_TEMPLATE.format(cmd_name=cmd_name,
                                       arg_list=arg_list,
                                       subcommand_switch=subcommand_switch)
