@@ -10,7 +10,7 @@ def strip_usage_line(line):
     for strip_char in "()[]|":
         line = line.replace(strip_char, '')
     line = re.sub('<.*?>', '', line)
-    line = re.sub('=.*?( |$)', '=- ', line) # '=-' to _arguments means that "=" is appended to the option
+    line = re.sub('=.*?( |$)', '= ', line)
     return line
 
 def get_usage(cmd):
@@ -34,7 +34,7 @@ def split_usage_lines(usage):
 
 def parse_option_lines(options_lines):
     def sanitize_line(line):
-        line = re.sub('=.*?( |$)', '=- ', line)
+        line = re.sub('=.*?( |$)', '= ', line)
         return line.replace("'", "'\\''").replace('[', '\\[').replace(']', '\\]').strip().split(None, 1)
     return dict(sanitize_line(line) for line in options_lines)
 

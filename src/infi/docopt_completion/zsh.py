@@ -62,7 +62,10 @@ class OhMyZshCompletion(CompletionGenerator):
             if not show_help or arg not in option_help:
                 return ''
             return "[{}]".format(option_help[arg])
-        return '\n'.join(["\t\t'({}){}{}' \\".format(arg, arg, get_help_opt(arg)) for arg in args])
+        def decorate_arg(arg):
+            # add "-" to args that end with "=". '=-' to _arguments means that "=" is appended to the option upon completion            
+            return (arg + "-") if arg.endswith("=") else arg
+        return '\n'.join(["\t\t'({0}){0}{1}' \\".format(decorate_arg(arg), get_help_opt(arg)) for arg in args])
     
     def create_subcommand_menu(self, cmd_name, subcmds):
         # the subcommand menu is added to the switch-case of line[1], which tests the next subcommand.
