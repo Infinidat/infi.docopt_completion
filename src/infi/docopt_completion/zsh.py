@@ -73,8 +73,8 @@ class ZshCompletion(CompletionGenerator):
         return '\n'.join(["\t\t\t\t'{}'".format(subcmd) for subcmd in subcmds])
     
     def create_section(self, cmd_name, param_tree, option_help):
-        subcommands = param_tree.get("subcommands", {})
-        args = param_tree.get("arguments", [])
+        subcommands = param_tree.subcommands
+        args = param_tree.arguments
         if args:
             arg_list = '\n' + self.create_arg_menu(args, option_help)
         else:

@@ -38,15 +38,27 @@ def parse_option_lines(options_lines):
         return line.replace("'", "'\\''").replace('[', '\\[').replace(']', '\\]').strip().split(None, 1)
     return dict(sanitize_line(line) for line in options_lines)
 
+class CommandParams(object):
+    """ contains command arguments and subcommands.
+    arguments are optional arguments like "-v", "-h", etc.
+    subcommands are optional keywords, like the "status" in "git status".
+    subcommands have their own CommandParams instance, so the "status" in "git status" can
+    have its own arguments and subcommands.
+    This way we can describe commands like "git remote add --fetch" with all the different options at each level """
+    def __init__(self):
+        self.arguments = []
+        self.subcommands = {}
+        
+    def get_subcommand(self, subcommand):
+        return self.subcommands.setdefault(subcommand, CommandParams())
+
 def parse_params(cmd):
-    # this function creates an argument tree for the target docopt tool.
-    # an argument tree is an "argument dictionary", which contains two items:
-    #  "argumnets": list of optional arguments
-    #  "subcommands": dictionary of command-name -> another "argument dictionary" of the command
+    # this function creates a parameter tree for the target docopt tool.
+    # a parameter tree is a CommandParams instance, see the documentation of the class
     # this function also returns a second parameter, which is a dictionary of option->option help string
     usage = get_usage(cmd)
     usage_lines, options_lines = split_usage_lines(usage)
-    param_tree = {}
+    param_tree = CommandParams()
     for line in usage_lines:
         line = strip_usage_line(line)
         args = line.split()[1:]
@@ -54,10 +66,9 @@ def parse_params(cmd):
         while len(args) > 0:
             arg = args.pop(0)
             if arg.startswith('-'):
-                current_tree.setdefault("arguments", []).append(arg)
+                current_tree.arguments.append(arg)
             else:
-                current_tree.setdefault("subcommands", {}).setdefault(arg, {})
-                current_tree = current_tree["subcommands"][arg]
+                current_tree = current_tree.get_subcommand(arg)
     return param_tree, parse_option_lines(options_lines)
 
 class CompletionGenerator(object):

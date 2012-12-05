@@ -39,8 +39,8 @@ class BashCompletion(CompletionGenerator):
         return " ".join(args) + " ".join(subcommands.keys())
     
     def create_section(self, cmd_name, param_tree, option_help, level_num):
-        subcommands = param_tree.get("subcommands", {})
-        args = param_tree.get("arguments", [])
+        subcommands = param_tree.subcommands
+        args = param_tree.arguments
         subcommand_switch = self.create_subcommand_switch(cmd_name, level_num, subcommands, args)
         res = SECTION_TEMPLATE.format(cmd_name=cmd_name,
                                       level_num=level_num,
