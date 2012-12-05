@@ -43,6 +43,10 @@ SUBCOMMAND_SWITCH_TEMPLATE = """'*::options:->options'
 	esac
 """
 
+CASE_TEMPLATE = """				{})
+					_{}-{}
+				;;"""
+
 class ZshCompletion(CompletionGenerator):
     def completion_path_exists(self):
         raise NotImplementedError()       # implemented in subclasses
@@ -65,7 +69,7 @@ class ZshCompletion(CompletionGenerator):
     def create_subcommand_menu(self, cmd_name, subcmds):
         # the subcommand menu is added to the switch-case of line[1], which tests the next subcommand.
         # the switch-case directs the next sub-command to its relevant section (function)
-        return '\n'.join(["""\t\t\t\t({})\n\t\t\t\t\t_{}-{}\n\t\t\t\t;;""".format(cmd, cmd_name, cmd) for cmd in subcmds])
+        return '\n'.join([CASE_TEMPLATE.format(cmd, cmd_name, cmd) for cmd in subcmds])
     
     def create_subcommand_list(self, subcmds):
         # the subcommand list is filled into the "subcommands" variable which is sent to the _describe command, to specify
