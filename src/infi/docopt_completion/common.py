@@ -18,7 +18,6 @@ def get_usage(cmd):
     if cmd_procecss.wait() != 0:
         raise DocoptCompletionException("Command does not exist or command help failed")
     usage_lines = cmd_procecss.stdout.read()
-    usage_lines = usage_lines
     return usage_lines
 
 def split_usage_lines(usage):
