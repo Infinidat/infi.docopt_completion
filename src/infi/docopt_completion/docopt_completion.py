@@ -3,11 +3,7 @@ from bash import BashCompletion
 from zsh import OhMyZshCompletion, ZshPreztoCompletion
 from common import DocoptCompletionException, parse_params
 
-def main():
-    if len(sys.argv) != 2:
-        print "Usage: {} <docopt-script>".format(sys.argv[0])
-        return 1
-    program, cmd = sys.argv
+def docopt_completion(cmd):
     completion_generators = [OhMyZshCompletion(),
                              ZshPreztoCompletion(),
                              BashCompletion()]
@@ -27,6 +23,13 @@ def main():
         generator.generate(cmd, param_tree, option_help)
     
     return 0
+
+def main():
+    if len(sys.argv) != 2:
+        print "Usage: {} <docopt-script>".format(sys.argv[0])
+        return 1
+    program, cmd = sys.argv
+    return docopt_completion(cmd)
 
 if __name__ == "__main__":
     sys.exit(main())
