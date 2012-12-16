@@ -4,15 +4,6 @@ import re
 class DocoptCompletionException(Exception):
     pass
 
-def strip_usage_line(line):
-    # just strip everything that is irrelevant
-    line = line.strip()
-    for strip_char in "()[]|":
-        line = line.replace(strip_char, '')
-    line = re.sub('<.*?>', '', line)
-    line = re.sub('=.*?( |$)', '= ', line)
-    return line
-
 def get_usage(cmd):
     cmd_procecss = subprocess.Popen(cmd + " --help", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     if cmd_procecss.wait() != 0:
@@ -20,22 +11,18 @@ def get_usage(cmd):
     usage_lines = cmd_procecss.stdout.read()
     return usage_lines
 
-def split_usage_lines(usage):
-    # splits to two lists of lines: one for "Usage" and one for "Options"
-    usage = usage.split("Usage:", 1)[-1]
-    usage_and_options = usage.split("Options:", 1)
-    if len(usage_and_options) == 1:     # no Options section
-        usage_and_options.append("")
-    usage, options = usage_and_options
-    usage_lines = usage.strip().splitlines()
-    options_lines = options.strip().splitlines()
-    return usage_lines, options_lines
-
-def parse_option_lines(options_lines):
+def parse_option_lines(doc):
     def sanitize_line(line):
-        line = re.sub('=.*?( |$)', '= ', line)
-        return line.replace("'", "'\\''").replace('[', '\\[').replace(']', '\\]').strip().split(None, 1)
-    return dict(sanitize_line(line) for line in options_lines)
+        return line.replace("'", "'\\''").replace('[', '\\[').replace(']', '\\]').strip()
+
+    for arg in re.split('^ *-|\n *-', doc)[1:]:
+        arg = "-" + arg
+        options, _, description = arg.strip().partition('  ')
+        options = options.replace(',', ' ')
+        options = re.sub("=\w+", "= ", options)
+        description = description.split("\n")[0]
+        for s in options.split():
+            yield s, sanitize_line(description)
 
 class CommandParams(object):
     """ contains command arguments and subcommands.
@@ -51,24 +38,39 @@ class CommandParams(object):
     def get_subcommand(self, subcommand):
         return self.subcommands.setdefault(subcommand, CommandParams())
 
+def build_command_tree(pattern, cmd_params):
+    """
+    Recursively fill in a command tree in CommandParams (see CommandParams documentation) according to a
+    docopt-parsed "pattern" object
+    """
+    from docopt import Either, Optional, OneOrMore, Required, Option, Command
+    if type(pattern) in [Either, Optional, OneOrMore]:
+        for child in pattern.children:
+            build_command_tree(child, cmd_params)
+    elif type(pattern) in [Required]:
+        for child in pattern.children:
+            cmd_params = build_command_tree(child, cmd_params)
+    elif type(pattern) in [Option]:
+        suffix = "=" if pattern.argcount else ""
+        if pattern.short:
+            cmd_params.arguments.append(pattern.short + suffix)
+        if pattern.long:
+            cmd_params.arguments.append(pattern.long + suffix)
+    elif type(pattern) in [Command]:
+        cmd_params = cmd_params.get_subcommand(pattern.name)
+    return cmd_params
+
 def parse_params(cmd):
     # this function creates a parameter tree for the target docopt tool.
     # a parameter tree is a CommandParams instance, see the documentation of the class
     # this function also returns a second parameter, which is a dictionary of option->option help string
+    from docopt import parse_doc_options, parse_pattern, formal_usage, printable_usage
     usage = get_usage(cmd)
-    usage_lines, options_lines = split_usage_lines(usage)
+    options = parse_doc_options(usage)
+    pattern = parse_pattern(formal_usage(printable_usage(usage)), options)
     param_tree = CommandParams()
-    for line in usage_lines:
-        line = strip_usage_line(line)
-        args = line.split()[1:]
-        current_tree = param_tree
-        while len(args) > 0:
-            arg = args.pop(0)
-            if arg.startswith('-'):
-                current_tree.arguments.append(arg)
-            else:
-                current_tree = current_tree.get_subcommand(arg)
-    return param_tree, parse_option_lines(options_lines)
+    build_command_tree(pattern, param_tree)
+    return param_tree, dict(list(parse_option_lines(usage)))
 
 class CompletionGenerator(object):
     """ base class for completion file generators """
