@@ -19,7 +19,7 @@ def parse_option_lines(doc):
         arg = "-" + arg
         options, _, description = arg.strip().partition('  ')
         options = options.replace(',', ' ')
-        options = re.sub("=\w+", "= ", options)
+        options = re.sub("=\S+", "= ", options)
         description = description.split("\n")[0]
         for s in options.split():
             yield s, sanitize_line(description)

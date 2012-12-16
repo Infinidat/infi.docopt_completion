@@ -25,7 +25,7 @@ def main():
     try:
         docopt_completion(cmd)
     except DocoptCompletionException, e:
-        print e.mesage
+        print e.message
         return 1
     return 0
 
