@@ -15,12 +15,15 @@ def get_options_descriptions(doc):
     def sanitize_line(line):
         return line.replace("'", "'\\''").replace('[', '\\[').replace(']', '\\]').strip()
 
-    for arg in re.split('^ *-|\n *-', doc)[1:]:
-        arg = "-" + arg
-        options, _, description = arg.strip().partition('  ')
+    for arg in re.findall('\n  .*', doc):
+        options, partition, description = arg.strip().partition('  ')
+        if not partition:
+            continue
+        if not options.startswith('-'):
+            yield options, sanitize_line(description)
+            continue
         options = options.replace(',', ' ')
         options = re.sub("=\S+", "= ", options)
-        description = description.split("\n")[0]
         for s in options.split():
             yield s, sanitize_line(description)
 
