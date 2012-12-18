@@ -6,8 +6,8 @@ FILE_TEMPLATE = """{}\ncomplete -F _{} {}"""
 SECTION_TEMPLATE = """
 _{cmd_name}()
 {{
-    local cur prev
-    _get_comp_words_by_ref cur prev
+    local cur
+    cur="${{COMP_WORDS[COMP_CWORD]}}"
     
     if [ $COMP_CWORD -{op} {level_num} ]; then
         COMPREPLY=( $( compgen -W '{compreply}' -- $cur) ){subcommand_switch}
