@@ -1,7 +1,7 @@
 from common import CompletionGenerator
 import os
 
-FILE_TEMPLATE = """{}\ncomplete -F _{} {}"""
+FILE_TEMPLATE = """{0}\ncomplete -F _{1} {1}"""
 
 SECTION_TEMPLATE = """
 _{cmd_name}()
@@ -19,11 +19,11 @@ SUBCOMMAND_SWITCH_TEMPLATE = """
     else
         case ${{COMP_WORDS[{level_num}]}} in
 {subcommand_cases}
-        esac 
+        esac
 """
 
-CASE_TEMPLATE = """            {})
-            _{}-{}
+CASE_TEMPLATE = """            {0})
+            _{1}-{0}
         ;;"""
  
 class BashCompletion(CompletionGenerator):
@@ -31,14 +31,12 @@ class BashCompletion(CompletionGenerator):
         return os.path.exists("/etc/bash_completion.d")
     
     def get_completion_filepath(self, cmd):
-        return "/etc/bash_completion.d/{}.sh".format(cmd)
+        return "/etc/bash_completion.d/{0}.sh".format(cmd)
     
     def create_subcommand_switch(self, cmd_name, level_num, subcommands, args):
         if len(subcommands) == 0:
             return ""
-        subcommand_cases = '\n'.join(CASE_TEMPLATE.format(subcommand,
-                                                           cmd_name,
-                                                           subcommand) for subcommand in subcommands)
+        subcommand_cases = '\n'.join(CASE_TEMPLATE.format(subcommand, cmd_name) for subcommand in subcommands)
         return SUBCOMMAND_SWITCH_TEMPLATE.format(level_num=level_num, subcommand_cases=subcommand_cases)
     
     def create_compreply(self, subcommands, args):
@@ -54,7 +52,7 @@ class BashCompletion(CompletionGenerator):
                                       subcommand_switch=subcommand_switch,
                                       op="eq" if len(subcommands) > 0 else 'ge')
         for subcommand_name, subcommand_tree in subcommands.items():
-            res += self.create_section("{}-{}".format(cmd_name, subcommand_name),
+            res += self.create_section("{0}-{1}".format(cmd_name, subcommand_name),
                                        subcommand_tree,
                                        option_help,
                                        level_num+1)
@@ -62,4 +60,4 @@ class BashCompletion(CompletionGenerator):
     
     def get_completion_file_content(self, cmd, param_tree, option_help):
         completion_file_inner_content = self.create_section(cmd, param_tree, option_help, 1)
-        return FILE_TEMPLATE.format(completion_file_inner_content, cmd, cmd)
+        return FILE_TEMPLATE.format(completion_file_inner_content, cmd)

@@ -8,10 +8,10 @@ def get_usage(cmd):
     cmd_procecss = subprocess.Popen(cmd + " --help", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     if cmd_procecss.wait() != 0:
         raise DocoptCompletionException("Command does not exist or command help failed")
-    usage_lines = cmd_procecss.stdout.read()
-    return usage_lines
+    usage = cmd_procecss.stdout.read()
+    return usage
 
-def parse_option_lines(doc):
+def get_options_descriptions(doc):
     def sanitize_line(line):
         return line.replace("'", "'\\''").replace('[', '\\[').replace(']', '\\]').strip()
 
@@ -70,7 +70,7 @@ def parse_params(cmd):
     pattern = parse_pattern(formal_usage(printable_usage(usage)), options)
     param_tree = CommandParams()
     build_command_tree(pattern, param_tree)
-    return param_tree, dict(list(parse_option_lines(usage)))
+    return param_tree, dict(list(get_options_descriptions(usage)))
 
 class CompletionGenerator(object):
     """ base class for completion file generators """

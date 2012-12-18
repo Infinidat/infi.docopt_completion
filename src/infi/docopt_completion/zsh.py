@@ -1,7 +1,7 @@
 import os
 from common import CompletionGenerator
 
-FILE_TEMPLATE = '#compdef {}\n\n{}\n\n_{} "$@"'
+FILE_TEMPLATE = '#compdef {0}\n\n{1}\n\n_{0} "$@"'
 
 # this is a template of a function called by the completion system when crawling the arguments already
 # typed. there is a section for every command and sub-command that the target script supports.
@@ -43,8 +43,8 @@ SUBCOMMAND_SWITCH_TEMPLATE = """'*::options:->options'
 	esac
 """
 
-CASE_TEMPLATE = """				{})
-					_{}-{}
+CASE_TEMPLATE = """				{0})
+					_{1}-{0}
 				;;"""
 
 class ZshCompletion(CompletionGenerator):
@@ -60,7 +60,7 @@ class ZshCompletion(CompletionGenerator):
         def get_help_opt(arg):
             if not show_help or arg not in option_help:
                 return ''
-            return "[{}]".format(option_help[arg])
+            return "[{0}]".format(option_help[arg])
         def decorate_arg(arg):
             # add "-" to args that end with "="
             # '=-' to _arguments means that "=" is appended to the option upon completion            
@@ -70,7 +70,7 @@ class ZshCompletion(CompletionGenerator):
     def create_subcommand_cases(self, cmd_name, subcmds):
         # the subcommand menu is added to the switch-case of line[1], which tests the next subcommand.
         # the switch-case directs the next sub-command to its relevant section (function)
-        return '\n'.join([CASE_TEMPLATE.format(cmd, cmd_name, cmd) for cmd in subcmds])
+        return '\n'.join([CASE_TEMPLATE.format(cmd, cmd_name) for cmd in subcmds])
     
     def create_subcommand_list(self, subcmds):
         # the subcommand list is filled into the "subcommands" variable which is sent to the _describe command,
@@ -98,12 +98,12 @@ class ZshCompletion(CompletionGenerator):
                                       arg_list=arg_list,
                                       subcommand_switch=subcommand_switch)
         for subcommand_name, subcommand_tree in subcommands.items():
-            res += self.create_section("{}-{}".format(cmd_name, subcommand_name), subcommand_tree, option_help)
+            res += self.create_section("{0}-{1}".format(cmd_name, subcommand_name), subcommand_tree, option_help)
         return res
 
     def get_completion_file_content(self, cmd, param_tree, option_help):
         completion_file_inner_content = self.create_section(cmd, param_tree, option_help)
-        return FILE_TEMPLATE.format(cmd, completion_file_inner_content, cmd)
+        return FILE_TEMPLATE.format(cmd, completion_file_inner_content)
     
 class OhMyZshCompletion(ZshCompletion):
     def completion_path_exists(self):
@@ -115,7 +115,7 @@ class OhMyZshCompletion(ZshCompletion):
         completion_path = os.path.expanduser('~/.oh-my-zsh/completions')
         if not os.path.exists(completion_path):
             os.makedirs(completion_path)
-        return os.path.join(completion_path, "_{}".format(cmd))
+        return os.path.join(completion_path, "_{0}".format(cmd))
 
 class ZshPreztoCompletion(ZshCompletion):
     def completion_path_exists(self):
@@ -123,5 +123,5 @@ class ZshPreztoCompletion(ZshCompletion):
     
     def get_completion_filepath(self, cmd):
         completion_path  = os.path.expanduser("~/.zprezto/modules/completion/external/src")
-        return os.path.join(completion_path, "_{}".format(cmd))
+        return os.path.join(completion_path, "_{0}".format(cmd))
     
