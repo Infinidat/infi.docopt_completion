@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 from .bash import BashCompletion
 from .zsh import OhMyZshCompletion, ZshPreztoCompletion
@@ -19,13 +20,13 @@ def docopt_completion(cmd):
 
 def main():
     if len(sys.argv) != 2:
-        print "Usage: {} <docopt-script>".format(sys.argv[0])
+        print("Usage: {} <docopt-script>".format(sys.argv[0]))
         return 1
     program, cmd = sys.argv
     try:
         docopt_completion(cmd)
-    except DocoptCompletionException, e:
-        print e.message
+    except DocoptCompletionException as e:
+        print(e.args[0])
         return 1
     return 0
 

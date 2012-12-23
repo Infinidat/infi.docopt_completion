@@ -1,4 +1,4 @@
-from common import CompletionGenerator
+from .common import CompletionGenerator
 import os
 
 FILE_TEMPLATE = """{0}\ncomplete -F _{1} {1}"""

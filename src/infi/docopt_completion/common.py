@@ -1,3 +1,4 @@
+from __future__ import print_function
 import subprocess
 import re
 
@@ -9,6 +10,9 @@ def get_usage(cmd):
     if cmd_procecss.wait() != 0:
         raise DocoptCompletionException("Command does not exist or command help failed")
     usage = cmd_procecss.stdout.read()
+    if type(usage) != str:
+        # in Python 3, usage will be bytes
+        usage = str(usage, "ascii")
     return usage
 
 def get_options_descriptions(doc):
@@ -89,7 +93,7 @@ class CompletionGenerator(object):
     def generate(self, cmd, param_tree, option_help):
         completion_file_content = self.get_completion_file_content(cmd, param_tree, option_help)
         file_path = self.get_completion_filepath(cmd)
-        f = open(file_path, "wb")
+        f = open(file_path, "w")
         f.write(completion_file_content)
         f.close()
-        print "Completion file written to {}".format(file_path)
+        print("Completion file written to {}".format(file_path))

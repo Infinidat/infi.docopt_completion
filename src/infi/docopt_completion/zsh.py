@@ -1,5 +1,5 @@
 import os
-from common import CompletionGenerator
+from .common import CompletionGenerator
 
 FILE_TEMPLATE = '#compdef {0}\n\n{1}\n\n_{0} "$@"'
 
