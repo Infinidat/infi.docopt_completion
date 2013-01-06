@@ -6,10 +6,10 @@ class DocoptCompletionException(Exception):
     pass
 
 def get_usage(cmd):
-    cmd_procecss = subprocess.Popen(cmd + " --help", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    if cmd_procecss.wait() != 0:
+    cmd_process = subprocess.Popen(cmd + " --help", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    if cmd_process.wait() != 0:
         raise DocoptCompletionException("Command does not exist or command help failed")
-    usage = cmd_procecss.stdout.read()
+    usage = cmd_process.stdout.read()
     if type(usage) != str:
         # in Python 3, usage will be bytes
         usage = str(usage, "ascii")
