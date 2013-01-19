@@ -7,13 +7,16 @@ class DocoptCompletionException(Exception):
 
 def get_usage(cmd):
     cmd_process = subprocess.Popen(cmd + " --help", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    if cmd_process.wait() != 0:
+    # Poll process for new output until finished
+    usage = bytes()
+    while True:
+        nextline = cmd_process.stdout.readline()
+        if len(nextline) == 0 and cmd_process.poll() is not None:
+            break
+        usage += nextline
+    if cmd_process.returncode != 0:
         raise DocoptCompletionException("Command does not exist or command help failed")
-    usage = cmd_process.stdout.read()
-    if type(usage) != str:
-        # in Python 3, usage will be bytes
-        usage = str(usage, "ascii")
-    return usage
+    return usage.decode("ascii")
 
 def get_options_descriptions(doc):
     def sanitize_line(line):
