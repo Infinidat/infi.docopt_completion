@@ -33,22 +33,22 @@ class BashCompletion(CompletionGenerator):
     def get_completion_filepath(self, cmd):
         return "/etc/bash_completion.d/{0}.sh".format(cmd)
     
-    def create_subcommand_switch(self, cmd_name, level_num, subcommands, args):
+    def create_subcommand_switch(self, cmd_name, level_num, subcommands, opts):
         if len(subcommands) == 0:
             return ""
         subcommand_cases = '\n'.join(CASE_TEMPLATE.format(subcommand, cmd_name) for subcommand in subcommands)
         return SUBCOMMAND_SWITCH_TEMPLATE.format(level_num=level_num, subcommand_cases=subcommand_cases)
     
-    def create_compreply(self, subcommands, args):
-        return " ".join(args) + " ".join(subcommands.keys())
+    def create_compreply(self, subcommands, opts):
+        return " ".join(opts) + " ".join(subcommands.keys())
     
     def create_section(self, cmd_name, param_tree, option_help, level_num):
         subcommands = param_tree.subcommands
-        args = param_tree.arguments
-        subcommand_switch = self.create_subcommand_switch(cmd_name, level_num, subcommands, args)
+        opts = param_tree.options
+        subcommand_switch = self.create_subcommand_switch(cmd_name, level_num, subcommands, opts)
         res = SECTION_TEMPLATE.format(cmd_name=cmd_name,
                                       level_num=level_num,
-                                      compreply = self.create_compreply(subcommands, args),
+                                      compreply = self.create_compreply(subcommands, opts),
                                       subcommand_switch=subcommand_switch,
                                       op="eq" if len(subcommands) > 0 else 'ge')
         for subcommand_name, subcommand_tree in subcommands.items():

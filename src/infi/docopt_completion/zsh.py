@@ -14,7 +14,7 @@ _{cmd_name} ()
 	typeset -A opt_args
 
 	_arguments -C \\
-		':command:->command' \\{arg_list}
+		':command:->command' \\{opt_list}
 		{subcommand_switch}
 }}
 """
@@ -54,18 +54,18 @@ class ZshCompletion(CompletionGenerator):
     def get_completion_filepath(self, cmd):
         raise NotImplementedError()       # implemented in subclasses
     
-    def create_arg_menu(self, args, option_help):
-        # this menu is added to the _arguments call and describes the optional arguments
-        show_help = all(arg in option_help for arg in args) # show help only if all options have help
-        def get_help_opt(arg):
-            if not show_help or arg not in option_help:
+    def create_opt_menu(self, opts, option_help):
+        # this menu is added to the _arguments call and describes the options
+        show_help = all(opt in option_help for opt in opts) # show help only if all options have help
+        def get_option_help(opt):
+            if not show_help or opt not in option_help:
                 return ''
-            return "[{0}]".format(option_help[arg])
-        def decorate_arg(arg):
-            # add "-" to args that end with "="
+            return "[{0}]".format(option_help[opt])
+        def decorate_opt(opt):
+            # add "-" to opts that end with "="
             # '=-' to _arguments means that "=" is appended to the option upon completion            
-            return (arg + "-") if arg.endswith("=") else arg
-        return '\n'.join(["\t\t'({0}){0}{1}' \\".format(decorate_arg(arg), get_help_opt(arg)) for arg in args])
+            return (opt + "-") if opt.endswith("=") else opt
+        return '\n'.join(["\t\t'({0}){0}{1}' \\".format(decorate_opt(opt), get_option_help(opt)) for opt in opts])
     
     def create_subcommand_cases(self, cmd_name, subcmds):
         # the subcommand menu is added to the switch-case of line[1], which tests the next subcommand.
@@ -101,14 +101,15 @@ class ZshCompletion(CompletionGenerator):
     
     def create_section(self, cmd_name, param_tree, option_help):
         subcommands = param_tree.subcommands
+        opts = param_tree.options
         args = param_tree.arguments
-        if args:
-            arg_list = '\n' + self.create_arg_menu(args, option_help)
+        if opts:
+            opt_list = '\n' + self.create_opt_menu(opts, option_help)
         else:
-            arg_list = ""
+            opt_list = ""
         subcommand_switch = self.create_subcommand_switch(cmd_name, option_help, subcommands)
         res = SECTION_TEMPLATE.format(cmd_name=cmd_name,
-                                      arg_list=arg_list,
+                                      opt_list=opt_list,
                                       subcommand_switch=subcommand_switch)
         for subcommand_name, subcommand_tree in subcommands.items():
             res += self.create_section("{0}-{1}".format(cmd_name, subcommand_name), subcommand_tree, option_help)
