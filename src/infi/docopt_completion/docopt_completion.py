@@ -1,10 +1,14 @@
 from __future__ import print_function
 import sys
+import os
 from .bash import BashCompletion
 from .zsh import OhMyZshCompletion, ZshPreztoCompletion
 from .common import DocoptCompletionException, parse_params
 
 def docopt_completion(cmd):
+    if os.sep in cmd:
+        raise DocoptCompletionException("Command cannot contain '{}'".format(os.sep))
+    
     completion_generators = [OhMyZshCompletion(),
                              ZshPreztoCompletion(),
                              BashCompletion()]
