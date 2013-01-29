@@ -47,7 +47,7 @@ class CommandParams(object):
         self.arguments = []
         self.options = []
         self.subcommands = {}
-        
+
     def get_subcommand(self, subcommand):
         return self.subcommands.setdefault(subcommand, CommandParams())
 
@@ -91,17 +91,24 @@ class CompletionGenerator(object):
     """ base class for completion file generators """
     def completion_path_exists(self):
         raise NotImplementedError()       # implemented in subclasses
-    
+
     def get_completion_filepath(self, cmd):
         raise NotImplementedError()       # implemented in subclasses
-    
+
     def get_completion_file_content(self, cmd, param_tree, option_help):
         raise NotImplementedError()       # implemented in subclasses
-        
+
     def generate(self, cmd, param_tree, option_help):
+        from os import access, W_OK
         completion_file_content = self.get_completion_file_content(cmd, param_tree, option_help)
         file_path = self.get_completion_filepath(cmd)
-        f = open(file_path, "w")
-        f.write(completion_file_content)
-        f.close()
+        if not access(file_path, W_OK):
+            print("Skipping file {}, no permissions".format(file_path))
+            return
+        try:
+            with open(file_path, "w") as fd:
+                fd.write(completion_file_content)
+        except IOError:
+            print("Failed to write {}".format(file_path))
+            return
         print("Completion file written to {}".format(file_path))
