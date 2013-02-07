@@ -6,14 +6,17 @@ class DocoptCompletionException(Exception):
     pass
 
 def get_usage(cmd):
-    cmd_procecss = subprocess.Popen(cmd + " --help", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    if cmd_procecss.wait() != 0:
+    cmd_process = subprocess.Popen(cmd + " --help", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    # Poll process for new output until finished
+    usage = bytes()
+    while True:
+        nextline = cmd_process.stdout.readline()
+        if len(nextline) == 0 and cmd_process.poll() is not None:
+            break
+        usage += nextline
+    if cmd_process.returncode != 0:
         raise DocoptCompletionException("Command does not exist or command help failed")
-    usage = cmd_procecss.stdout.read()
-    if type(usage) != str:
-        # in Python 3, usage will be bytes
-        usage = str(usage, "ascii")
-    return usage
+    return usage.decode("ascii")
 
 def get_options_descriptions(doc):
     def sanitize_line(line):
@@ -32,16 +35,19 @@ def get_options_descriptions(doc):
             yield s, sanitize_line(description)
 
 class CommandParams(object):
-    """ contains command arguments and subcommands.
-    arguments are optional arguments like "-v", "-h", etc.
+    """ contains command options, arguments and subcommands.
+    options are optional arguments like "-v", "-h", etc.
+    arguments are required arguments like file paths, etc.
     subcommands are optional keywords, like the "status" in "git status".
     subcommands have their own CommandParams instance, so the "status" in "git status" can
-    have its own arguments and subcommands.
-    This way we can describe commands like "git remote add --fetch" with all the different options at each level """
+    have its own options, arguments and subcommands.
+    This way we can describe commands like "git remote add origin --fetch" with all the different
+    options at each level """
     def __init__(self):
         self.arguments = []
+        self.options = []
         self.subcommands = {}
-        
+
     def get_subcommand(self, subcommand):
         return self.subcommands.setdefault(subcommand, CommandParams())
 
@@ -50,7 +56,7 @@ def build_command_tree(pattern, cmd_params):
     Recursively fill in a command tree in CommandParams (see CommandParams documentation) according to a
     docopt-parsed "pattern" object
     """
-    from docopt import Either, Optional, OneOrMore, Required, Option, Command
+    from docopt import Either, Optional, OneOrMore, Required, Option, Command, Argument
     if type(pattern) in [Either, Optional, OneOrMore]:
         for child in pattern.children:
             build_command_tree(child, cmd_params)
@@ -60,11 +66,13 @@ def build_command_tree(pattern, cmd_params):
     elif type(pattern) in [Option]:
         suffix = "=" if pattern.argcount else ""
         if pattern.short:
-            cmd_params.arguments.append(pattern.short + suffix)
+            cmd_params.options.append(pattern.short + suffix)
         if pattern.long:
-            cmd_params.arguments.append(pattern.long + suffix)
+            cmd_params.options.append(pattern.long + suffix)
     elif type(pattern) in [Command]:
         cmd_params = cmd_params.get_subcommand(pattern.name)
+    elif type(pattern) in [Argument]:
+        cmd_params.arguments.append(pattern.name)
     return cmd_params
 
 def parse_params(cmd):
@@ -83,17 +91,24 @@ class CompletionGenerator(object):
     """ base class for completion file generators """
     def completion_path_exists(self):
         raise NotImplementedError()       # implemented in subclasses
-    
+
     def get_completion_filepath(self, cmd):
         raise NotImplementedError()       # implemented in subclasses
-    
+
     def get_completion_file_content(self, cmd, param_tree, option_help):
         raise NotImplementedError()       # implemented in subclasses
-        
+
     def generate(self, cmd, param_tree, option_help):
+        from os import access, W_OK
         completion_file_content = self.get_completion_file_content(cmd, param_tree, option_help)
         file_path = self.get_completion_filepath(cmd)
-        f = open(file_path, "w")
-        f.write(completion_file_content)
-        f.close()
+        if not access(file_path, W_OK):
+            print("Skipping file {}, no permissions".format(file_path))
+            return
+        try:
+            with open(file_path, "w") as fd:
+                fd.write(completion_file_content)
+        except IOError:
+            print("Failed to write {}".format(file_path))
+            return
         print("Completion file written to {}".format(file_path))
