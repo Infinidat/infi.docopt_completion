@@ -27,6 +27,9 @@ CASE_TEMPLATE = """            {0})
         ;;"""
  
 class BashCompletion(CompletionGenerator):
+    def get_name(self):
+        return "BASH with bash-completion"
+    
     def get_completion_path(self):
         return "/etc/bash_completion.d"
     

@@ -124,6 +124,9 @@ class ZshCompletion(CompletionGenerator):
         return FILE_TEMPLATE.format(cmd, completion_file_inner_content)
     
 class OhMyZshCompletion(ZshCompletion):
+    def get_name(self):
+        return "ZSH with oh-my-zsh"
+    
     def get_completion_path(self):
         return os.path.expanduser('~/.oh-my-zsh')
     
@@ -136,6 +139,9 @@ class OhMyZshCompletion(ZshCompletion):
         return os.path.join(completion_path, "_{0}".format(cmd))
 
 class ZshPreztoCompletion(ZshCompletion):
+    def get_name(self):
+        return "ZSH with Prezto"
+    
     def get_completion_path(self):
         return os.path.expanduser('~/.zprezto')
     
@@ -144,6 +150,9 @@ class ZshPreztoCompletion(ZshCompletion):
         return os.path.join(completion_path, "_{0}".format(cmd))
 
 class ZshUsrShareCompletion(ZshCompletion):
+    def get_name(self):
+        return "ZSH with no addons"
+    
     def get_completion_path(self):
         return "/usr/share/zsh/*/functions/Completion"
     

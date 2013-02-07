@@ -15,6 +15,19 @@ Options:
     --manual-bash       Do not attempt to find completion paths automatically. Output BASH completion file to local directory    
 """
 
+COMPLETION_PATH_USAGE = """No completion paths found.
+docopt-completion only supports the following configurations:
+{paths_help}
+You may also generate the completion file and place it in a path known to your completion system, by running the command:
+\tdocopt-completion <docopt-script> [--manual-zsh | --manual-bash]
+For zsh, completion paths can be listed by running 'echo $fpath'"""
+
+def _generate_paths_help(generators):
+    output = ""
+    for generator in generators:
+        output += "\t{}. The path {} must exist.\n".format(generator.get_name(), generator.get_completion_path())
+    return output
+
 def _autodetect_generators():
     completion_generators = [OhMyZshCompletion(),
                              ZshPreztoCompletion(),
@@ -23,7 +36,8 @@ def _autodetect_generators():
     generators_to_use = [generator for generator in completion_generators if generator.completion_path_exists()]
     
     if len(generators_to_use) == 0:
-        raise DocoptCompletionException("No completion paths found.")
+        paths_help = _generate_paths_help(completion_generators)
+        raise DocoptCompletionException(COMPLETION_PATH_USAGE.format(paths_help=paths_help))
 
     return generators_to_use
 

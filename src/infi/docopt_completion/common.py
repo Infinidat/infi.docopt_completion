@@ -91,17 +91,17 @@ def parse_params(cmd):
 
 class CompletionGenerator(object):
     """ base class for completion file generators """
-    def completion_path_exists(self):
-        raise NotImplementedError()       # implemented in subclasses
-
+    def get_name(self):
+        raise NotImplementedError()
+    
     def get_completion_path(self):
-        raise NotImplementedError()       # implemented in subclasses
+        raise NotImplementedError()
 
     def get_completion_filepath(self, cmd):
-        raise NotImplementedError()       # implemented in subclasses
+        raise NotImplementedError()
 
     def get_completion_file_content(self, cmd, param_tree, option_help):
-        raise NotImplementedError()       # implemented in subclasses
+        raise NotImplementedError()
 
     def completion_path_exists(self):
         return os.path.exists(self.get_completion_path())
