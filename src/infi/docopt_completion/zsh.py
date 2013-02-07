@@ -1,4 +1,5 @@
 import os
+import glob
 from .common import CompletionGenerator
 
 FILE_TEMPLATE = '#compdef {0}\n\n{1}\n\n_{0} "$@"'
@@ -138,4 +139,15 @@ class ZshPreztoCompletion(ZshCompletion):
     def get_completion_filepath(self, cmd):
         completion_path  = os.path.expanduser("~/.zprezto/modules/completion/external/src")
         return os.path.join(completion_path, "_{0}".format(cmd))
+
+class ZshUsrShareCompletion(ZshCompletion):
+    def get_completion_path(self):
+        return "/usr/share/zsh/*/functions/Completion"
     
+    def completion_path_exists(self):
+        return len(glob.glob(self.get_completion_path())) > 0
+    
+    def get_completion_filepath(self, cmd):
+        completion_paths = glob.glob(self.get_completion_path())
+        for completion_path in completion_paths:
+            yield os.path.join(completion_path, "_{0}".format(cmd))

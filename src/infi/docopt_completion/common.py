@@ -1,6 +1,8 @@
 from __future__ import print_function
 import subprocess
 import re
+import os
+import types
 
 class DocoptCompletionException(Exception):
     pass
@@ -98,11 +100,8 @@ class CompletionGenerator(object):
     def get_completion_file_content(self, cmd, param_tree, option_help):
         raise NotImplementedError()       # implemented in subclasses
 
-    def generate(self, cmd, param_tree, option_help):
-        from os import access, W_OK
-        completion_file_content = self.get_completion_file_content(cmd, param_tree, option_help)
-        file_path = self.get_completion_filepath(cmd)
-        if not access(file_path, W_OK):
+    def _write_to_file(self, file_path, completion_file_content):
+        if not os.access(os.path.dirname(file_path), os.W_OK):
             print("Skipping file {}, no permissions".format(file_path))
             return
         try:
@@ -112,3 +111,11 @@ class CompletionGenerator(object):
             print("Failed to write {}".format(file_path))
             return
         print("Completion file written to {}".format(file_path))
+
+    def generate(self, cmd, param_tree, option_help):
+        completion_file_content = self.get_completion_file_content(cmd, param_tree, option_help)
+        file_paths = self.get_completion_filepath(cmd)
+        if not isinstance(file_paths, types.GeneratorType):
+            file_paths = [file_paths]
+        for file_path in file_paths:
+            self._write_to_file(file_path, completion_file_content)

@@ -2,7 +2,7 @@ from __future__ import print_function
 import sys
 import os
 from .bash import BashCompletion
-from .zsh import OhMyZshCompletion, ZshPreztoCompletion
+from .zsh import OhMyZshCompletion, ZshPreztoCompletion, ZshUsrShareCompletion, ZshCompletion
 from .common import DocoptCompletionException, parse_params
 
 def docopt_completion(cmd):
@@ -11,6 +11,7 @@ def docopt_completion(cmd):
     
     completion_generators = [OhMyZshCompletion(),
                              ZshPreztoCompletion(),
+                             ZshUsrShareCompletion(),
                              BashCompletion()]
     generators_to_use = [generator for generator in completion_generators if generator.completion_path_exists()]
     
