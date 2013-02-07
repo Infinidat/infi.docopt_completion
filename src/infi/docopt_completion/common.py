@@ -94,11 +94,17 @@ class CompletionGenerator(object):
     def completion_path_exists(self):
         raise NotImplementedError()       # implemented in subclasses
 
+    def get_completion_path(self):
+        raise NotImplementedError()       # implemented in subclasses
+
     def get_completion_filepath(self, cmd):
         raise NotImplementedError()       # implemented in subclasses
 
     def get_completion_file_content(self, cmd, param_tree, option_help):
         raise NotImplementedError()       # implemented in subclasses
+
+    def completion_path_exists(self):
+        return os.path.exists(self.get_completion_path())
 
     def _write_to_file(self, file_path, completion_file_content):
         if not os.access(os.path.dirname(file_path), os.W_OK):

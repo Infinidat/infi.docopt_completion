@@ -27,11 +27,16 @@ CASE_TEMPLATE = """            {0})
         ;;"""
  
 class BashCompletion(CompletionGenerator):
-    def completion_path_exists(self):
-        return os.path.exists("/etc/bash_completion.d")
+    def get_completion_path(self):
+        return "/etc/bash_completion.d"
     
     def get_completion_filepath(self, cmd):
-        return "/etc/bash_completion.d/{0}.sh".format(cmd)
+        if not self.completion_path_exists():
+            # used for manual generation
+            completion_path = "."
+        else:
+            completion_path = self.get_completion_path()
+        return os.path.join(completion_path, "{0}.sh".format(cmd))
     
     def create_subcommand_switch(self, cmd_name, level_num, subcommands, opts):
         if len(subcommands) == 0:

@@ -1,14 +1,21 @@
 from __future__ import print_function
 import sys
 import os
+import docopt
 from .bash import BashCompletion
 from .zsh import OhMyZshCompletion, ZshPreztoCompletion, ZshUsrShareCompletion, ZshCompletion
 from .common import DocoptCompletionException, parse_params
 
-def docopt_completion(cmd):
-    if os.sep in cmd:
-        raise DocoptCompletionException("Command cannot contain '{}'".format(os.sep))
-    
+USAGE = """Usage:
+    docopt-completion <docopt-script> [--manual-zsh | --manual-bash]
+    docopt-completion --help
+
+Options:
+    --manual-zsh        Do not attempt to find completion paths automatically. Output ZSH completion file to local directory
+    --manual-bash       Do not attempt to find completion paths automatically. Output BASH completion file to local directory    
+"""
+
+def _autodetect_generators():
     completion_generators = [OhMyZshCompletion(),
                              ZshPreztoCompletion(),
                              ZshUsrShareCompletion(),
@@ -17,6 +24,19 @@ def docopt_completion(cmd):
     
     if len(generators_to_use) == 0:
         raise DocoptCompletionException("No completion paths found.")
+
+    return generators_to_use
+
+def docopt_completion(cmd, manual_zsh=False, manual_bash=False):
+    if os.sep in cmd:
+        raise DocoptCompletionException("Command cannot contain '{}'".format(os.sep))
+    
+    if manual_zsh:
+        generators_to_use = [ZshCompletion()]
+    elif manual_bash:
+        generators_to_use = [BashCompletion()]
+    else:
+        generators_to_use = _autodetect_generators()
     
     param_tree, option_help = parse_params(cmd)
         
@@ -24,12 +44,12 @@ def docopt_completion(cmd):
         generator.generate(cmd, param_tree, option_help)
 
 def main():
-    if len(sys.argv) != 2:
-        print("Usage: {} <docopt-script>".format(sys.argv[0]))
-        return 1
-    program, cmd = sys.argv
+    arguments = docopt.docopt(USAGE)
+    cmd = arguments["<docopt-script>"]
+    manual_bash = arguments["--manual-bash"]
+    manual_zsh = arguments["--manual-zsh"]
     try:
-        docopt_completion(cmd)
+        docopt_completion(cmd, manual_zsh, manual_bash)
     except DocoptCompletionException as e:
         print(e.args[0])
         return 1

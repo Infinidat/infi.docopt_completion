@@ -49,11 +49,14 @@ CASE_TEMPLATE = """				{0})
 				;;"""
 
 class ZshCompletion(CompletionGenerator):
-    def completion_path_exists(self):
-        raise NotImplementedError()       # implemented in subclasses
+    # The default completion paths are used if manual file generation is specified.
+    # the paths are redefined in subclasses for automatic generation
+    
+    def get_completion_path(self):
+        return "."
     
     def get_completion_filepath(self, cmd):
-        raise NotImplementedError()       # implemented in subclasses
+        return os.path.join(self.get_completion_path(), "_{0}".format(cmd))
     
     def create_opt_menu(self, opts, option_help):
         # this menu is added to the _arguments call and describes the options
@@ -121,8 +124,8 @@ class ZshCompletion(CompletionGenerator):
         return FILE_TEMPLATE.format(cmd, completion_file_inner_content)
     
 class OhMyZshCompletion(ZshCompletion):
-    def completion_path_exists(self):
-        return os.path.exists(os.path.expanduser('~/.oh-my-zsh'))
+    def get_completion_path(self):
+        return os.path.expanduser('~/.oh-my-zsh')
     
     def get_completion_filepath(self, cmd):
         # completion paths are paths under the $fpath variable of zsh. However since we can't get $fpath, we
@@ -133,8 +136,8 @@ class OhMyZshCompletion(ZshCompletion):
         return os.path.join(completion_path, "_{0}".format(cmd))
 
 class ZshPreztoCompletion(ZshCompletion):
-    def completion_path_exists(self):
-        return os.path.exists(os.path.expanduser('~/.zprezto'))
+    def get_completion_path(self):
+        return os.path.expanduser('~/.zprezto')
     
     def get_completion_filepath(self, cmd):
         completion_path  = os.path.expanduser("~/.zprezto/modules/completion/external/src")
