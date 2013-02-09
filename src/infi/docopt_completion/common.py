@@ -81,9 +81,9 @@ def parse_params(cmd):
     # this function creates a parameter tree for the target docopt tool.
     # a parameter tree is a CommandParams instance, see the documentation of the class
     # this function also returns a second parameter, which is a dictionary of option->option help string
-    from docopt import parse_doc_options, parse_pattern, formal_usage, printable_usage
+    from docopt import parse_defaults, parse_pattern, formal_usage, printable_usage
     usage = get_usage(cmd)
-    options = parse_doc_options(usage)
+    options = parse_defaults(usage)
     pattern = parse_pattern(formal_usage(printable_usage(usage)), options)
     param_tree = CommandParams()
     build_command_tree(pattern, param_tree)
