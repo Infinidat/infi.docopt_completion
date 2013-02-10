@@ -42,9 +42,6 @@ def _autodetect_generators():
     return generators_to_use
 
 def docopt_completion(cmd, manual_zsh=False, manual_bash=False):
-    if os.sep in cmd:
-        raise DocoptCompletionException("Command cannot contain '{}'".format(os.sep))
-    
     if manual_zsh:
         generators_to_use = [ZshCompletion()]
     elif manual_bash:
@@ -55,7 +52,7 @@ def docopt_completion(cmd, manual_zsh=False, manual_bash=False):
     param_tree, option_help = parse_params(cmd)
         
     for generator in generators_to_use:
-        generator.generate(cmd, param_tree, option_help)
+        generator.generate(os.path.basename(cmd), param_tree, option_help)
 
 def main():
     arguments = docopt.docopt(USAGE)
