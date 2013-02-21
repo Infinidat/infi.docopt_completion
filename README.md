@@ -14,21 +14,23 @@ The utility will then generate a completion file suitable for bash or zsh (depen
 system) and place that file in the correct place for the shell to use.
 After running the script, tab-completion in the shell will auto-complete the available commands of the given script.
 
-Note: some old bash systems may not support tab auto-completion. The package 'bash-completion' must be installed on
-the operating system.
+Configuration Support
+--------------------
+Note that not all system configurations are automatically supported. The script looks for known ZSH and BASH paths,
+but on some systems these paths are configured differently. In this case,
+you may "force" the generation of the completion file in the local directory, and place it manually in a path known
+to your completion system. Generation can be forced by running the command with one of the flags:
+
+    docopt-completion <docopt-script> [--manual-zsh | --manual-bash]
+    
+For zsh, completion paths can be listed by running the command `echo $fpath`.
+
+Also note that some old bash systems may not support tab auto-completion.
+The package 'bash-completion' must be installed for bash tab-completion to work.
 
 Checking out the code
 =====================
+Run the following:
 
-This project uses buildout and infi-projector, and git to generate setup.py and __version__.py.
-In order to generate these, first get infi-projector:
-
-    easy_install infi.projector
-
-and then run in the project directory:
-
+    easy_install -U infi.projector
     projector devenv build
-
-To use the plugin directly from the source, run:
-
-    python setup.py develop

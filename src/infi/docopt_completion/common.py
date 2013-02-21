@@ -1,6 +1,8 @@
 from __future__ import print_function
 import subprocess
 import re
+import os
+import types
 
 class DocoptCompletionException(Exception):
     pass
@@ -79,9 +81,9 @@ def parse_params(cmd):
     # this function creates a parameter tree for the target docopt tool.
     # a parameter tree is a CommandParams instance, see the documentation of the class
     # this function also returns a second parameter, which is a dictionary of option->option help string
-    from docopt import parse_doc_options, parse_pattern, formal_usage, printable_usage
+    from docopt import parse_defaults, parse_pattern, formal_usage, printable_usage
     usage = get_usage(cmd)
-    options = parse_doc_options(usage)
+    options = parse_defaults(usage)
     pattern = parse_pattern(formal_usage(printable_usage(usage)), options)
     param_tree = CommandParams()
     build_command_tree(pattern, param_tree)
@@ -89,20 +91,23 @@ def parse_params(cmd):
 
 class CompletionGenerator(object):
     """ base class for completion file generators """
-    def completion_path_exists(self):
-        raise NotImplementedError()       # implemented in subclasses
+    def get_name(self):
+        raise NotImplementedError()
+    
+    def get_completion_path(self):
+        raise NotImplementedError()
 
     def get_completion_filepath(self, cmd):
-        raise NotImplementedError()       # implemented in subclasses
+        raise NotImplementedError()
 
     def get_completion_file_content(self, cmd, param_tree, option_help):
-        raise NotImplementedError()       # implemented in subclasses
+        raise NotImplementedError()
 
-    def generate(self, cmd, param_tree, option_help):
-        from os import access, W_OK
-        completion_file_content = self.get_completion_file_content(cmd, param_tree, option_help)
-        file_path = self.get_completion_filepath(cmd)
-        if not access(file_path, W_OK):
+    def completion_path_exists(self):
+        return os.path.exists(self.get_completion_path())
+
+    def _write_to_file(self, file_path, completion_file_content):
+        if not os.access(os.path.dirname(file_path), os.W_OK):
             print("Skipping file {}, no permissions".format(file_path))
             return
         try:
@@ -112,3 +117,11 @@ class CompletionGenerator(object):
             print("Failed to write {}".format(file_path))
             return
         print("Completion file written to {}".format(file_path))
+
+    def generate(self, cmd, param_tree, option_help):
+        completion_file_content = self.get_completion_file_content(cmd, param_tree, option_help)
+        file_paths = self.get_completion_filepath(cmd)
+        if not isinstance(file_paths, types.GeneratorType):
+            file_paths = [file_paths]
+        for file_path in file_paths:
+            self._write_to_file(file_path, completion_file_content)

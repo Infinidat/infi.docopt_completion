@@ -1,4 +1,5 @@
 import os
+import glob
 from .common import CompletionGenerator
 
 FILE_TEMPLATE = '#compdef {0}\n\n{1}\n\n_{0} "$@"'
@@ -48,11 +49,16 @@ CASE_TEMPLATE = """				{0})
 				;;"""
 
 class ZshCompletion(CompletionGenerator):
-    def completion_path_exists(self):
-        raise NotImplementedError()       # implemented in subclasses
+    """ Base class for generating ZSH completion files"""
+    
+    # The completion paths defined here (the base class) are used if manual file generation is specified.
+    # the paths are redefined in subclasses for automatic generation
+    
+    def get_completion_path(self):
+        return "."
     
     def get_completion_filepath(self, cmd):
-        raise NotImplementedError()       # implemented in subclasses
+        return os.path.join(self.get_completion_path(), "_{0}".format(cmd))
     
     def create_opt_menu(self, opts, option_help):
         # this menu is added to the _arguments call and describes the options
@@ -120,22 +126,53 @@ class ZshCompletion(CompletionGenerator):
         return FILE_TEMPLATE.format(cmd, completion_file_inner_content)
     
 class OhMyZshCompletion(ZshCompletion):
-    def completion_path_exists(self):
-        return os.path.exists(os.path.expanduser('~/.oh-my-zsh'))
+    def get_name(self):
+        return "ZSH with oh-my-zsh"
+    
+    def get_completion_path(self):
+        return os.path.expanduser('~/.oh-my-zsh')
     
     def get_completion_filepath(self, cmd):
-        # completion paths are paths under the $fpath variable of zsh. However since we can't get $fpath, we
-        # try to use the default path
         completion_path = os.path.expanduser('~/.oh-my-zsh/completions')
         if not os.path.exists(completion_path):
             os.makedirs(completion_path)
         return os.path.join(completion_path, "_{0}".format(cmd))
 
 class ZshPreztoCompletion(ZshCompletion):
-    def completion_path_exists(self):
-        return os.path.exists(os.path.expanduser('~/.zprezto'))
+    def get_name(self):
+        return "ZSH with Prezto"
+    
+    def get_completion_path(self):
+        return os.path.expanduser('~/.zprezto')
     
     def get_completion_filepath(self, cmd):
         completion_path  = os.path.expanduser("~/.zprezto/modules/completion/external/src")
         return os.path.join(completion_path, "_{0}".format(cmd))
+
+class ZshUsrShareCompletion(ZshCompletion):
+    def get_name(self):
+        return "ZSH with no addons"
     
+    def get_completion_path(self):
+        return "/usr/share/zsh/*/functions"
+    
+    def _get_completion_paths(self):
+        # Examples of paths we support:
+        # - /usr/share/zsh/5.0.1/functions/Completion
+        # - /usr/share/zsh/5.0.1/functions
+        # - /usr/share/zsh/functions/Completion
+        # - /usr/share/zsh/functions
+        paths_to_check = [self.get_completion_path(), self.get_completion_path().replace("/*", "")]
+        for path_to_check in paths_to_check:
+            for path in glob.glob(path_to_check):
+                path_with_completion = os.path.join(path, "Completion")
+                if os.path.exists(path_with_completion):
+                    path = path_with_completion
+                yield path
+    
+    def completion_path_exists(self):
+        return any(os.path.exists(path) for path in self._get_completion_paths())
+    
+    def get_completion_filepath(self, cmd):
+        for completion_path in self._get_completion_paths():
+            yield os.path.join(completion_path, "_{0}".format(cmd))
