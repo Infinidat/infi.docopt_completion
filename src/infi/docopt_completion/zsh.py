@@ -2,7 +2,32 @@ import os
 import glob
 from .common import CompletionGenerator
 
-FILE_TEMPLATE = '#compdef {0}\n\n{1}\n\n_{0} "$@"'
+# We fill the file template with the command name and the different sections
+# generated from the templates below.
+# _message_next_arg: outputs the next positional argument name to the user
+# with the _message function. It counts the number of elements in the 'words'
+# special array that don't begin with '-' (options) and then uses the myargs
+# array defined by the caller to output the correct argument name.
+# We skip the first two elements in 'words' because the first is always empty and
+# the second is the last keyword before the options and arguments start.
+FILE_TEMPLATE = '''#compdef {0}
+
+_message_next_arg()
+{{
+    argcount=0
+    for word in "${{words[@]:1}}"
+    do
+        if [[ $word != -* ]] ; then
+            ((argcount++))
+        fi
+    done
+    if [[ $argcount -le ${{#myargs[@]}} ]] ; then
+        _message -r $myargs[$argcount]
+    fi
+}}
+{1}
+
+_{0} "$@"'''
 
 # this is a template of a function called by the completion system when crawling the arguments already
 # typed. there is a section for every command and sub-command that the target script supports.
@@ -11,8 +36,8 @@ FILE_TEMPLATE = '#compdef {0}\n\n{1}\n\n_{0} "$@"'
 SECTION_TEMPLATE = """
 _{cmd_name} ()
 {{
-	local curcontext="$curcontext" state line
-	typeset -A opt_args
+    local context state state_descr line
+    typeset -A opt_args
 
 	_arguments -C \\
 		':command:->command' \\{opt_list}
@@ -48,6 +73,28 @@ CASE_TEMPLATE = """				{0})
 					_{1}-{0}
 				;;"""
 
+# When there are positional arguments to the handled context, we use this tempalte.
+# We output the name of the next positional argument by using the _message_next_args
+# function (defined in FILE_TEMPLATE), unless the current word starts with "-" which means
+# the user is trying to type an option (then we specify the available options by using
+# _arguments, as in the regular SECTION_TEMPLATE)
+ARG_SECTION_TEMPLATE = """
+_{cmd_name} ()
+{{
+    local context state state_descr line
+    typeset -A opt_args
+
+    if [[ $words[$CURRENT] == -* ]] ; then
+    	_arguments -C \\
+    	':command:->command' \\{opt_list}
+
+    else
+        myargs=({args})
+        _message_next_arg
+    fi
+}}
+"""
+
 class ZshCompletion(CompletionGenerator):
     """ Base class for generating ZSH completion files"""
     
@@ -61,6 +108,8 @@ class ZshCompletion(CompletionGenerator):
         return os.path.join(self.get_completion_path(), "_{0}".format(cmd))
     
     def create_opt_menu(self, opts, option_help):
+        if not opts:
+            return ""
         # this menu is added to the _arguments call and describes the options
         show_help = all(opt in option_help for opt in opts) # show help only if all options have help
         def get_option_help(opt):
@@ -71,7 +120,8 @@ class ZshCompletion(CompletionGenerator):
             # add "-" to opts that end with "="
             # '=-' to _arguments means that "=" is appended to the option upon completion            
             return (opt + "-") if opt.endswith("=") else opt
-        return '\n'.join(["\t\t'({0}){0}{1}' \\".format(decorate_opt(opt), get_option_help(opt)) for opt in opts])
+        return '\n' + '\n'.join(["\t\t'({0}){0}{1}' \\".format(decorate_opt(opt), get_option_help(opt))
+                                 for opt in opts])
     
     def create_subcommand_cases(self, cmd_name, subcmds):
         # the subcommand menu is added to the switch-case of line[1], which tests the next subcommand.
@@ -105,14 +155,22 @@ class ZshCompletion(CompletionGenerator):
                                                  subcommand_cases=subcommand_cases,
                                                  subcommand=cmd_name.replace('-', ' '))
     
+    def create_args_section(self, cmd_name, opt_list, args):
+        res = ARG_SECTION_TEMPLATE.format(cmd_name="{}".format(cmd_name),
+                                           args=' '.join("'{}'".format(arg) for arg in args),
+                                           opt_list=opt_list)
+        return res
+    
     def create_section(self, cmd_name, param_tree, option_help):
         subcommands = param_tree.subcommands
         opts = param_tree.options
         args = param_tree.arguments
-        if opts:
-            opt_list = '\n' + self.create_opt_menu(opts, option_help)
-        else:
-            opt_list = ""
+        opt_list = self.create_opt_menu(opts, option_help)
+        if args:
+            # when we have an argument we move the completion system to arguments-or-options only section,
+            # this means we DON'T support a script that has a arguments-or-subcommands part like:
+            # script-name.py (<some-arg> | (a-subcommand <command-arg>))
+            return self.create_args_section(cmd_name, opt_list, args)
         subcommand_switch = self.create_subcommand_switch(cmd_name, option_help, subcommands)
         res = SECTION_TEMPLATE.format(cmd_name=cmd_name,
                                       opt_list=opt_list,
