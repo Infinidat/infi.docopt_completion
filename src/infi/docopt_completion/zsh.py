@@ -136,13 +136,13 @@ class ZshCompletion(CompletionGenerator):
                 if subcommand_with_trail in option_help:
                     return option_help[subcommand_with_trail]
             return None
-        # show help only if all options have help
+        # show help only if all subcommands have help
         show_help = all(get_subcmd_help(subcmd) is not None for subcmd in subcmds)
         def get_help_opt(subcmd):
             if not show_help:
                 return ''
             return "[{0}]".format(get_subcmd_help(subcmd))
-        # the subcommand list is filled into the "subcommands" variable which is sent to the _describe command,
+        # the subcommand list is filled into the "subcommands" variable which is sent to the _values command,
         # to specify the next completion options. It includes all the next available sub-commands
         return '\n'.join(["\t\t\t\t'{0}{1}'".format(subcmd, get_help_opt(subcmd)) for subcmd in subcmds])
     
