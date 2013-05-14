@@ -15,7 +15,7 @@ FILE_TEMPLATE = '''#compdef {0}
 _message_next_arg()
 {{
     argcount=0
-    for word in "${{words[0,-2]}}"
+    for word in "${{words[@][2,-1]}}"
     do
         if [[ $word != -* ]] ; then
             ((argcount++))
