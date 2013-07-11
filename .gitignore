@@ -53,3 +53,4 @@ tmp*
 buildout.in
 
 src/infi/docopt_completion/__version__.py
+bootstrap.py

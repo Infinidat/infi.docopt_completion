@@ -8,7 +8,11 @@ class DocoptCompletionException(Exception):
     pass
 
 def get_usage(cmd):
-    cmd_process = subprocess.Popen(cmd + " --help", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    error_message = "Failed to run '{} --help'".format(cmd)
+    try:
+        cmd_process = subprocess.Popen([cmd, "--help"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except OSError:
+        raise DocoptCompletionException(error_message + " : command does not exist")
     # Poll process for new output until finished
     usage = bytes()
     while True:
@@ -17,7 +21,7 @@ def get_usage(cmd):
             break
         usage += nextline
     if cmd_process.returncode != 0:
-        raise DocoptCompletionException("Command does not exist or command help failed")
+        raise DocoptCompletionException(error_message + " : command returned {}".format(cmd_process.returncode))
     return usage.decode("ascii")
 
 def get_options_descriptions(doc):
@@ -93,7 +97,7 @@ class CompletionGenerator(object):
     """ base class for completion file generators """
     def get_name(self):
         raise NotImplementedError()
-    
+
     def get_completion_path(self):
         raise NotImplementedError()
 
