@@ -1,7 +1,8 @@
 from .common import CompletionGenerator
 import os
+import string
 
-FILE_TEMPLATE = """{0}\ncomplete -F _{1} {1}"""
+FILE_TEMPLATE = """{0}\ncomplete -F _{1} {2}"""
 
 SECTION_TEMPLATE = """
 _{cmd_name}()
@@ -56,15 +57,20 @@ class BashCompletion(CompletionGenerator):
                                       subcommand_switch=subcommand_switch,
                                       op="eq" if len(subcommands) > 0 else 'ge')
         for subcommand_name, subcommand_tree in subcommands.items():
-            res += self.create_section("{0}-{1}".format(cmd_name, subcommand_name),
+            res += self.create_section("{0}_{1}".format(cmd_name, subcommand_name),
                                        subcommand_tree,
                                        option_help,
                                        level_num+1)
         return res
 
+    def sanitize_name(self, name):
+        # some bash versions don't support ".", "-", etc. in function names
+        valid_chars = string.ascii_letters + string.digits + "_"
+        return "".join([char for char in name if char in valid_chars])
+
     def get_completion_file_content(self, cmd, param_tree, option_help):
-        completion_file_inner_content = self.create_section(cmd, param_tree, option_help, 1)
-        return FILE_TEMPLATE.format(completion_file_inner_content, cmd)
+        completion_file_inner_content = self.create_section(self.sanitize_name(cmd), param_tree, option_help, 1)
+        return FILE_TEMPLATE.format(completion_file_inner_content, self.sanitize_name(cmd), cmd)
 
 class ManualBashCompletion(BashCompletion):
     def get_completion_path(self):
