@@ -48,8 +48,8 @@ class BashCompletion(CompletionGenerator):
         return SUBCOMMAND_SWITCH_TEMPLATE.format(level_num=level_num, subcommand_cases=subcommand_cases)
     
     def create_compreply(self, subcommands, opts):
-        return " ".join(opts) + " ".join(subcommands.keys())
-    
+        return " ".join(opts) + " " + " ".join(subcommands.keys())
+
     def create_section(self, cmd_name, param_tree, option_help, level_num):
         subcommands = param_tree.subcommands
         opts = param_tree.options
