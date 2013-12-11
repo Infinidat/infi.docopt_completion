@@ -34,11 +34,7 @@ class BashCompletion(CompletionGenerator):
         return "/etc/bash_completion.d"
 
     def get_completion_filepath(self, cmd):
-        if not self.completion_path_exists():
-            # used for manual generation
-            completion_path = "."
-        else:
-            completion_path = self.get_completion_path()
+        completion_path = self.get_completion_path()
         return os.path.join(completion_path, "{0}.sh".format(cmd))
 
     def create_subcommand_switch(self, cmd_name, level_num, subcommands, opts):
@@ -69,3 +65,7 @@ class BashCompletion(CompletionGenerator):
     def get_completion_file_content(self, cmd, param_tree, option_help):
         completion_file_inner_content = self.create_section(cmd, param_tree, option_help, 1)
         return FILE_TEMPLATE.format(completion_file_inner_content, cmd)
+
+class ManualBashCompletion(BashCompletion):
+    def get_completion_path(self):
+        return "."

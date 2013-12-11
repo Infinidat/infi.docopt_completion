@@ -2,7 +2,7 @@ from __future__ import print_function
 import sys
 import os
 import docopt
-from .bash import BashCompletion
+from .bash import BashCompletion, ManualBashCompletion
 from .zsh import OhMyZshCompletion, ZshPreztoCompletion, ZshUsrShareCompletion, ZshCompletion
 from .common import DocoptCompletionException, parse_params
 
@@ -45,7 +45,7 @@ def docopt_completion(cmd, manual_zsh=False, manual_bash=False):
     if manual_zsh:
         generators_to_use = [ZshCompletion()]
     elif manual_bash:
-        generators_to_use = [BashCompletion()]
+        generators_to_use = [ManualBashCompletion()]
     else:
         generators_to_use = _autodetect_generators()
 
