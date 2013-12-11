@@ -8,7 +8,7 @@ _{cmd_name}()
 {{
     local cur
     cur="${{COMP_WORDS[COMP_CWORD]}}"
-    
+
     if [ $COMP_CWORD -{op} {level_num} ]; then
         COMPREPLY=( $( compgen -W '{compreply}' -- $cur) ){subcommand_switch}
     fi
@@ -25,14 +25,14 @@ SUBCOMMAND_SWITCH_TEMPLATE = """
 CASE_TEMPLATE = """            {0})
             _{1}-{0}
         ;;"""
- 
+
 class BashCompletion(CompletionGenerator):
     def get_name(self):
         return "BASH with bash-completion"
-    
+
     def get_completion_path(self):
         return "/etc/bash_completion.d"
-    
+
     def get_completion_filepath(self, cmd):
         if not self.completion_path_exists():
             # used for manual generation
@@ -40,13 +40,13 @@ class BashCompletion(CompletionGenerator):
         else:
             completion_path = self.get_completion_path()
         return os.path.join(completion_path, "{0}.sh".format(cmd))
-    
+
     def create_subcommand_switch(self, cmd_name, level_num, subcommands, opts):
         if len(subcommands) == 0:
             return ""
         subcommand_cases = '\n'.join(CASE_TEMPLATE.format(subcommand, cmd_name) for subcommand in subcommands)
         return SUBCOMMAND_SWITCH_TEMPLATE.format(level_num=level_num, subcommand_cases=subcommand_cases)
-    
+
     def create_compreply(self, subcommands, opts):
         return " ".join(opts) + " " + " ".join(subcommands.keys())
 
@@ -65,7 +65,7 @@ class BashCompletion(CompletionGenerator):
                                        option_help,
                                        level_num+1)
         return res
-    
+
     def get_completion_file_content(self, cmd, param_tree, option_help):
         completion_file_inner_content = self.create_section(cmd, param_tree, option_help, 1)
         return FILE_TEMPLATE.format(completion_file_inner_content, cmd)
