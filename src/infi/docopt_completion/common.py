@@ -8,11 +8,11 @@ class DocoptCompletionException(Exception):
     pass
 
 def get_usage(cmd):
-    error_message = "Failed to run '{} --help'".format(cmd)
+    error_message = "Failed to run '{cmd} --help'".format(cmd=cmd)
     try:
         cmd_process = subprocess.Popen([cmd, "--help"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except OSError:
-        raise DocoptCompletionException(error_message + " : command does not exist")
+        raise DocoptCompletionException("error_message : command does not exist".format(error_message=error_message)
     # Poll process for new output until finished
     usage = bytes()
     while True:
@@ -21,7 +21,7 @@ def get_usage(cmd):
             break
         usage += nextline
     if cmd_process.returncode != 0:
-        raise DocoptCompletionException(error_message + " : command returned {}".format(cmd_process.returncode))
+        raise DocoptCompletionException(error_message + " : command returned {returncode}".format(returncode=cmd_process.returncode))
     return usage.decode("ascii")
 
 def get_options_descriptions(doc):
@@ -112,15 +112,15 @@ class CompletionGenerator(object):
 
     def _write_to_file(self, file_path, completion_file_content):
         if not os.access(os.path.dirname(file_path), os.W_OK):
-            print("Skipping file {}, no permissions".format(file_path))
+            print("Skipping file {file_path}, no permissions".format(file_path=file_path))
             return
         try:
             with open(file_path, "w") as fd:
                 fd.write(completion_file_content)
         except IOError:
-            print("Failed to write {}".format(file_path))
+            print("Failed to write {file_path}".format(file_path=file_path))
             return
-        print("Completion file written to {}".format(file_path))
+        print("Completion file written to {file_path}".format(file_path=file_path))
 
     def generate(self, cmd, param_tree, option_help):
         completion_file_content = self.get_completion_file_content(cmd, param_tree, option_help)
