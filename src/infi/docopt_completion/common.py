@@ -67,7 +67,7 @@ def build_command_tree(pattern, cmd_params):
     Recursively fill in a command tree in CommandParams (see CommandParams documentation) according to a
     docopt-parsed "pattern" object
     """
-    from docopt import Either, Optional, OneOrMore, Required, Option, Command, Argument
+    from docopt import (Either, Optional, OneOrMore, Required, Option, Command, Argument)
     if type(pattern) in [Either, Optional, OneOrMore]:
         for child in pattern.children:
             build_command_tree(child, cmd_params)
@@ -90,7 +90,7 @@ def parse_params(cmd):
     # this function creates a parameter tree for the target docopt tool.
     # a parameter tree is a CommandParams instance, see the documentation of the class
     # this function also returns a second parameter, which is a dictionary of option->option help string
-    from docopt import parse_defaults, parse_pattern, formal_usage, printable_usage
+    from docopt import (parse_defaults, parse_pattern, formal_usage, printable_usage)
     usage = get_usage(cmd)
     options = parse_defaults(usage)
     pattern = parse_pattern(formal_usage(printable_usage(usage)), options)
