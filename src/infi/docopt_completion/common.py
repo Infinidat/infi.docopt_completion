@@ -12,7 +12,7 @@ def get_usage(cmd):
     try:
         cmd_process = subprocess.Popen([cmd, "--help"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except OSError:
-        raise DocoptCompletionException("error_message : command does not exist".format(error_message=error_message)
+        raise DocoptCompletionException("{error_message} : command does not exist".format(error_message=error_message)
     # Poll process for new output until finished
     usage = bytes()
     while True:
@@ -21,7 +21,12 @@ def get_usage(cmd):
             break
         usage += nextline
     if cmd_process.returncode != 0:
-        raise DocoptCompletionException(error_message + " : command returned {returncode}".format(returncode=cmd_process.returncode))
+        raise DocoptCompletionException(
+            "{error_message} : command returned {returncode}".format(
+                error_message=error_message,
+                returncode=returncode
+            )
+        )
     return usage.decode("ascii")
 
 def get_options_descriptions(doc):
