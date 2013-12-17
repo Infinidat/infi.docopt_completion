@@ -46,14 +46,19 @@ def get_options_descriptions(doc):
             yield s, sanitize_line(description)
 
 class CommandParams(object):
-    """ contains command options, arguments and subcommands.
-    options are optional arguments like "-v", "-h", etc.
-    arguments are required arguments like file paths, etc.
-    subcommands are optional keywords, like the "status" in "git status".
-    subcommands have their own CommandParams instance, so the "status" in "git status" can
+    """Contains command options, arguments and subcommands.
+    
+    Options are optional arguments like "-v", "-h", etc.
+    
+    Arguments are required arguments like file paths, etc.
+    
+    Subcommands are optional keywords, like the "status" in "git status".
+    Subcommands have their own CommandParams instance, so the "status" in "git status" can
     have its own options, arguments and subcommands.
-    This way we can describe commands like "git remote add origin --fetch" with all the different
-    options at each level """
+    
+    This way, we can describe commands like "git remote add origin --fetch" with all the different
+    options at each level.
+    """
     def __init__(self):
         self.arguments = []
         self.options = []
@@ -64,8 +69,7 @@ class CommandParams(object):
 
 def build_command_tree(pattern, cmd_params):
     """
-    Recursively fill in a command tree in CommandParams (see CommandParams documentation) according to a
-    docopt-parsed "pattern" object
+    Recursively fill in a command tree in cmd_params according to a docopt-parsed "pattern" object.
     """
     from docopt import (Either, Optional, OneOrMore, Required, Option, Command, Argument)
     if type(pattern) in [Either, Optional, OneOrMore]:
@@ -87,9 +91,9 @@ def build_command_tree(pattern, cmd_params):
     return cmd_params
 
 def parse_params(cmd):
-    # this function creates a parameter tree for the target docopt tool.
-    # a parameter tree is a CommandParams instance, see the documentation of the class
-    # this function also returns a second parameter, which is a dictionary of option->option help string
+    # This creates a parameter tree (CommandParams object) for the target docopt tool.
+    # Also returns a second parameter, a dict of:
+    #   option->option-help-string
     from docopt import (parse_defaults, parse_pattern, formal_usage, printable_usage)
     usage = get_usage(cmd)
     options = parse_defaults(usage)
@@ -99,7 +103,7 @@ def parse_params(cmd):
     return param_tree, dict(list(get_options_descriptions(usage)))
 
 class CompletionGenerator(object):
-    """ base class for completion file generators """
+    """Completion file generator base class. """
     def get_name(self):
         raise NotImplementedError()
 
