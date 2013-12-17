@@ -4,8 +4,28 @@ import re
 import os
 import types
 
-class DocoptCompletionException(Exception):
-    pass
+def build_command_tree(pattern, cmd_params):
+    """
+    Recursively fill in a command tree in cmd_params according to a docopt-parsed "pattern" object.
+    """
+    from docopt import (Either, Optional, OneOrMore, Required, Option, Command, Argument)
+    if type(pattern) in [Either, Optional, OneOrMore]:
+        for child in pattern.children:
+            build_command_tree(child, cmd_params)
+    elif type(pattern) in [Required]:
+        for child in pattern.children:
+            cmd_params = build_command_tree(child, cmd_params)
+    elif type(pattern) in [Option]:
+        suffix = "=" if pattern.argcount else ""
+        if pattern.short:
+            cmd_params.options.append(pattern.short + suffix)
+        if pattern.long:
+            cmd_params.options.append(pattern.long + suffix)
+    elif type(pattern) in [Command]:
+        cmd_params = cmd_params.get_subcommand(pattern.name)
+    elif type(pattern) in [Argument]:
+        cmd_params.arguments.append(pattern.name)
+    return cmd_params
 
 def get_usage(cmd):
     error_message = "Failed to run '{cmd} --help'".format(cmd=cmd)
@@ -45,6 +65,23 @@ def get_options_descriptions(doc):
         for s in options.split():
             yield s, sanitize_line(description)
 
+def parse_params(cmd):
+    # This creates a parameter tree (CommandParams object) for the target docopt tool.
+    # Also returns a second parameter, a dict of:
+    #   option->option-help-string
+    from docopt import (parse_defaults, parse_pattern, formal_usage, printable_usage)
+    usage = get_usage(cmd)
+    options = parse_defaults(usage)
+    pattern = parse_pattern(formal_usage(printable_usage(usage)), options)
+    param_tree = CommandParams()
+    build_command_tree(pattern, param_tree)
+    return param_tree, dict(list(get_options_descriptions(usage)))
+
+
+class DocoptCompletionException(Exception):
+    pass
+
+
 class CommandParams(object):
     """Contains command options, arguments and subcommands.
     
@@ -67,43 +104,22 @@ class CommandParams(object):
     def get_subcommand(self, subcommand):
         return self.subcommands.setdefault(subcommand, CommandParams())
 
-def build_command_tree(pattern, cmd_params):
-    """
-    Recursively fill in a command tree in cmd_params according to a docopt-parsed "pattern" object.
-    """
-    from docopt import (Either, Optional, OneOrMore, Required, Option, Command, Argument)
-    if type(pattern) in [Either, Optional, OneOrMore]:
-        for child in pattern.children:
-            build_command_tree(child, cmd_params)
-    elif type(pattern) in [Required]:
-        for child in pattern.children:
-            cmd_params = build_command_tree(child, cmd_params)
-    elif type(pattern) in [Option]:
-        suffix = "=" if pattern.argcount else ""
-        if pattern.short:
-            cmd_params.options.append(pattern.short + suffix)
-        if pattern.long:
-            cmd_params.options.append(pattern.long + suffix)
-    elif type(pattern) in [Command]:
-        cmd_params = cmd_params.get_subcommand(pattern.name)
-    elif type(pattern) in [Argument]:
-        cmd_params.arguments.append(pattern.name)
-    return cmd_params
-
-def parse_params(cmd):
-    # This creates a parameter tree (CommandParams object) for the target docopt tool.
-    # Also returns a second parameter, a dict of:
-    #   option->option-help-string
-    from docopt import (parse_defaults, parse_pattern, formal_usage, printable_usage)
-    usage = get_usage(cmd)
-    options = parse_defaults(usage)
-    pattern = parse_pattern(formal_usage(printable_usage(usage)), options)
-    param_tree = CommandParams()
-    build_command_tree(pattern, param_tree)
-    return param_tree, dict(list(get_options_descriptions(usage)))
 
 class CompletionGenerator(object):
     """Completion file generator base class. """
+    
+    def _write_to_file(self, file_path, completion_file_content):
+        if not os.access(os.path.dirname(file_path), os.W_OK):
+            print("Skipping file {file_path}, no permissions".format(file_path=file_path))
+            return
+        try:
+            with open(file_path, "w") as fd:
+                fd.write(completion_file_content)
+        except IOError:
+            print("Failed to write {file_path}".format(file_path=file_path))
+            return
+        print("Completion file written to {file_path}".format(file_path=file_path))
+    
     def get_name(self):
         raise NotImplementedError()
 
@@ -118,18 +134,6 @@ class CompletionGenerator(object):
 
     def completion_path_exists(self):
         return os.path.exists(self.get_completion_path())
-
-    def _write_to_file(self, file_path, completion_file_content):
-        if not os.access(os.path.dirname(file_path), os.W_OK):
-            print("Skipping file {file_path}, no permissions".format(file_path=file_path))
-            return
-        try:
-            with open(file_path, "w") as fd:
-                fd.write(completion_file_content)
-        except IOError:
-            print("Failed to write {file_path}".format(file_path=file_path))
-            return
-        print("Completion file written to {file_path}".format(file_path=file_path))
 
     def generate(self, cmd, param_tree, option_help):
         completion_file_content = self.get_completion_file_content(cmd, param_tree, option_help)
