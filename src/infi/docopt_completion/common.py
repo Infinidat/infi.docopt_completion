@@ -4,6 +4,11 @@ import re
 import os
 import types
 
+
+class DocoptCompletionException(Exception):
+    pass
+
+
 def build_command_tree(pattern, cmd_params):
     """
     Recursively fill in a command tree in cmd_params according to a docopt-parsed "pattern" object.
@@ -27,6 +32,7 @@ def build_command_tree(pattern, cmd_params):
         cmd_params.arguments.append(pattern.name)
     return cmd_params
 
+
 def get_usage(cmd):
     error_message = "Failed to run '{cmd} --help'".format(cmd=cmd)
     try:
@@ -41,13 +47,10 @@ def get_usage(cmd):
             break
         usage += nextline
     if cmd_process.returncode != 0:
-        raise DocoptCompletionException(
-            "{error_message} : command returned {returncode}".format(
-                error_message=error_message,
-                returncode=returncode
-            )
-        )
+        msg = "{error_message} : command returned {returncode}"
+        raise DocoptCompletionException(msg.format(error_message=error_message, returncode=returncode))
     return usage.decode("ascii")
+
 
 def get_options_descriptions(doc):
     def sanitize_line(line):
@@ -65,6 +68,7 @@ def get_options_descriptions(doc):
         for s in options.split():
             yield s, sanitize_line(description)
 
+
 def parse_params(cmd):
     # This creates a parameter tree (CommandParams object) for the target docopt tool.
     # Also returns a second parameter, a dict of:
@@ -76,10 +80,6 @@ def parse_params(cmd):
     param_tree = CommandParams()
     build_command_tree(pattern, param_tree)
     return param_tree, dict(list(get_options_descriptions(usage)))
-
-
-class DocoptCompletionException(Exception):
-    pass
 
 
 class CommandParams(object):
