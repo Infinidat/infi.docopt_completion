@@ -4,11 +4,16 @@ import re
 import os
 import types
 
+
+class DocoptCompletionException(Exception):
+    pass
+
+
 def build_command_tree(pattern, cmd_params):
     """
     Recursively fill in a command tree in cmd_params according to a docopt-parsed "pattern" object.
     """
-    from docopt import (Either, Optional, OneOrMore, Required, Option, Command, Argument)
+    from docopt import Either, Optional, OneOrMore, Required, Option, Command, Argument
     if type(pattern) in [Either, Optional, OneOrMore]:
         for child in pattern.children:
             build_command_tree(child, cmd_params)
@@ -27,12 +32,13 @@ def build_command_tree(pattern, cmd_params):
         cmd_params.arguments.append(pattern.name)
     return cmd_params
 
+
 def get_usage(cmd):
     error_message = "Failed to run '{cmd} --help'".format(cmd=cmd)
     try:
         cmd_process = subprocess.Popen([cmd, "--help"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     except OSError:
-        raise DocoptCompletionException("{error_message} : command does not exist".format(error_message=error_message)
+        raise DocoptCompletionException("{error_message} : command does not exist".format(error_message=error_message))
     # Poll process for new output until finished
     usage = bytes()
     while True:
@@ -41,13 +47,10 @@ def get_usage(cmd):
             break
         usage += nextline
     if cmd_process.returncode != 0:
-        raise DocoptCompletionException(
-            "{error_message} : command returned {returncode}".format(
-                error_message=error_message,
-                returncode=returncode
-            )
-        )
+        msg = "{error_message} : command returned {returncode}"
+        raise DocoptCompletionException(msg.format(error_message=error_message, returncode=returncode))
     return usage.decode("ascii")
+
 
 def get_options_descriptions(doc):
     def sanitize_line(line):
@@ -65,11 +68,12 @@ def get_options_descriptions(doc):
         for s in options.split():
             yield s, sanitize_line(description)
 
+
 def parse_params(cmd):
     # This creates a parameter tree (CommandParams object) for the target docopt tool.
     # Also returns a second parameter, a dict of:
     #   option->option-help-string
-    from docopt import (parse_defaults, parse_pattern, formal_usage, printable_usage)
+    from docopt import parse_defaults, parse_pattern, formal_usage, printable_usage
     usage = get_usage(cmd)
     options = parse_defaults(usage)
     pattern = parse_pattern(formal_usage(printable_usage(usage)), options)
@@ -78,21 +82,17 @@ def parse_params(cmd):
     return param_tree, dict(list(get_options_descriptions(usage)))
 
 
-class DocoptCompletionException(Exception):
-    pass
-
-
 class CommandParams(object):
     """Contains command options, arguments and subcommands.
-    
+
     Options are optional arguments like "-v", "-h", etc.
-    
+
     Arguments are required arguments like file paths, etc.
-    
+
     Subcommands are optional keywords, like the "status" in "git status".
     Subcommands have their own CommandParams instance, so the "status" in "git status" can
     have its own options, arguments and subcommands.
-    
+
     This way, we can describe commands like "git remote add origin --fetch" with all the different
     options at each level.
     """
@@ -107,7 +107,7 @@ class CommandParams(object):
 
 class CompletionGenerator(object):
     """Completion file generator base class. """
-    
+
     def _write_to_file(self, file_path, completion_file_content):
         if not os.access(os.path.dirname(file_path), os.W_OK):
             print("Skipping file {file_path}, no permissions".format(file_path=file_path))
@@ -119,7 +119,7 @@ class CompletionGenerator(object):
             print("Failed to write {file_path}".format(file_path=file_path))
             return
         print("Completion file written to {file_path}".format(file_path=file_path))
-    
+
     def get_name(self):
         raise NotImplementedError()
 

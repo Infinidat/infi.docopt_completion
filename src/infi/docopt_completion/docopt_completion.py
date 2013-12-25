@@ -2,7 +2,7 @@ from __future__ import print_function
 import sys
 import os
 import docopt
-from .bash import BashCompletion
+from .bash import BashCompletion, ManualBashCompletion
 from .zsh import OhMyZshCompletion, ZshPreztoCompletion, ZshUsrShareCompletion, ZshCompletion
 from .common import DocoptCompletionException, parse_params
 
@@ -12,7 +12,7 @@ USAGE = """Usage:
 
 Options:
     --manual-zsh        Do not attempt to find completion paths automatically. Output ZSH completion file to local directory
-    --manual-bash       Do not attempt to find completion paths automatically. Output BASH completion file to local directory    
+    --manual-bash       Do not attempt to find completion paths automatically. Output BASH completion file to local directory
 """
 
 COMPLETION_PATH_USAGE = """No completion paths found.
@@ -34,7 +34,7 @@ def _autodetect_generators():
                              ZshUsrShareCompletion(),
                              BashCompletion()]
     generators_to_use = [generator for generator in completion_generators if generator.completion_path_exists()]
-    
+
     if len(generators_to_use) == 0:
         paths_help = _generate_paths_help(completion_generators)
         raise DocoptCompletionException(COMPLETION_PATH_USAGE.format(paths_help=paths_help))
@@ -45,12 +45,12 @@ def docopt_completion(cmd, manual_zsh=False, manual_bash=False):
     if manual_zsh:
         generators_to_use = [ZshCompletion()]
     elif manual_bash:
-        generators_to_use = [BashCompletion()]
+        generators_to_use = [ManualBashCompletion()]
     else:
         generators_to_use = _autodetect_generators()
-    
+
     param_tree, option_help = parse_params(cmd)
-        
+
     for generator in generators_to_use:
         generator.generate(os.path.basename(cmd), param_tree, option_help)
 
