@@ -48,7 +48,7 @@ def get_usage(cmd):
         usage += nextline
     if cmd_process.returncode != 0:
         msg = "{error_message} : command returned {returncode}"
-        raise DocoptCompletionException(msg.format(error_message=error_message, returncode=returncode))
+        raise DocoptCompletionException(msg.format(error_message=error_message, returncode=cmd_process.returncode))
     return usage.decode("ascii")
 
 
