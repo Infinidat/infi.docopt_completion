@@ -24,7 +24,7 @@ SUBCOMMAND_SWITCH_TEMPLATE = """
 """
 
 CASE_TEMPLATE = """            {0})
-            _{1}-{0}
+            _{1}_{0}
         ;;"""
 
 class BashCompletion(CompletionGenerator):
