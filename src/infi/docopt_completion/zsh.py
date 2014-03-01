@@ -39,9 +39,9 @@ _{cmd_name} ()
     local context state state_descr line
     typeset -A opt_args
 
-	_arguments -C \\
-		':command:->command' \\{opt_list}
-		{subcommand_switch}
+    _arguments -C \\
+        ':command:->command' \\{opt_list}
+        {subcommand_switch}
 }}
 """
 
@@ -52,26 +52,26 @@ _{cmd_name} ()
 # there are subcommands
 SUBCOMMAND_SWITCH_TEMPLATE = """'*::options:->options'
 
-	case $state in
-		(command)
-			local -a subcommands
-			subcommands=(
+    case $state in
+        (command)
+            local -a subcommands
+            subcommands=(
 {subcommand_list}
-			)
-			_values '{subcommand}' $subcommands
-		;;
+            )
+            _values '{subcommand}' $subcommands
+        ;;
 
-		(options)
-			case $line[1] in
+        (options)
+            case $line[1] in
 {subcommand_cases}
-			esac
-		;;
-	esac
+            esac
+        ;;
+    esac
 """
 
-CASE_TEMPLATE = """				{0})
-					_{1}-{0}
-				;;"""
+CASE_TEMPLATE = """                {0})
+                    _{1}-{0}
+                ;;"""
 
 # When there are positional arguments to the handled context, we use this tempalte.
 # We output the name of the next positional argument by using the _message_next_args
@@ -85,8 +85,8 @@ _{cmd_name} ()
     typeset -A opt_args
 
     if [[ $words[$CURRENT] == -* ]] ; then
-    	_arguments -C \\
-    	':command:->command' \\{opt_list}
+        _arguments -C \\
+        ':command:->command' \\{opt_list}
 
     else
         myargs=({args})
@@ -111,7 +111,7 @@ class ZshCompletion(CompletionGenerator):
         if not opts:
             return ""
         # this menu is added to the _arguments call and describes the options
-        show_help = all(opt in option_help for opt in opts) # show help only if all options have help
+        show_help = all(opt in option_help for opt in opts)  # show help only if all options have help
         def get_option_help(opt):
             if not show_help or opt not in option_help:
                 return ''
@@ -204,7 +204,7 @@ class ZshPreztoCompletion(ZshCompletion):
         return os.path.expanduser('~/.zprezto')
 
     def get_completion_filepath(self, cmd):
-        completion_path  = os.path.expanduser("~/.zprezto/modules/completion/external/src")
+        completion_path = os.path.expanduser("~/.zprezto/modules/completion/external/src")
         return os.path.join(completion_path, "_{0}".format(cmd))
 
 class ZshUsrShareCompletion(ZshCompletion):
