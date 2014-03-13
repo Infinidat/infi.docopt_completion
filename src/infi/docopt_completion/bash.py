@@ -53,7 +53,7 @@ class BashCompletion(CompletionGenerator):
         subcommand_switch = self.create_subcommand_switch(cmd_name, level_num, subcommands, opts)
         res = SECTION_TEMPLATE.format(cmd_name=cmd_name,
                                       level_num=level_num,
-                                      compreply = self.create_compreply(subcommands, opts),
+                                      compreply=self.create_compreply(subcommands, opts),
                                       subcommand_switch=subcommand_switch,
                                       op="eq" if len(subcommands) > 0 else 'ge')
         for subcommand_name, subcommand_tree in subcommands.items():
