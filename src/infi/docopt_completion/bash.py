@@ -11,7 +11,7 @@ _{cmd_name}()
     cur="${{COMP_WORDS[COMP_CWORD]}}"
 
     if [ $COMP_CWORD -{op} {level_num} ]; then
-        COMPREPLY=( $( compgen -W '{compreply}' -- $cur) ){subcommand_switch}
+        COMPREPLY=( $( compgen {compreply} -- $cur) ){subcommand_switch}
     fi
 }}
 """
@@ -44,8 +44,13 @@ class BashCompletion(CompletionGenerator):
         subcommand_cases = '\n'.join(CASE_TEMPLATE.format(subcommand, cmd_name) for subcommand in subcommands)
         return SUBCOMMAND_SWITCH_TEMPLATE.format(level_num=level_num, subcommand_cases=subcommand_cases)
 
-    def create_compreply(self, subcommands, opts):
-        return " ".join(opts) + " " + " ".join(subcommands.keys())
+    def create_compreply(self, param_tree):
+        # add -f (show files in completion options) if there are arguments in the current section
+        # in this case there are (usually) no subcommands to suggest, and only flags, so it's ok to suggest files,
+        # and if the user types "-" first, then only the flags will be suggested
+        flag = '-fW' if len(param_tree.arguments) > 0 else '-W'
+        word_list = " ".join(param_tree.options) + " " + " ".join(param_tree.subcommands.keys())
+        return "{} '{}'".format(flag, word_list)
 
     def create_section(self, cmd_name, param_tree, option_help, level_num):
         subcommands = param_tree.subcommands
@@ -53,7 +58,7 @@ class BashCompletion(CompletionGenerator):
         subcommand_switch = self.create_subcommand_switch(cmd_name, level_num, subcommands, opts)
         res = SECTION_TEMPLATE.format(cmd_name=cmd_name,
                                       level_num=level_num,
-                                      compreply=self.create_compreply(subcommands, opts),
+                                      compreply=self.create_compreply(param_tree),
                                       subcommand_switch=subcommand_switch,
                                       op="eq" if len(subcommands) > 0 else 'ge')
         for subcommand_name, subcommand_tree in subcommands.items():
