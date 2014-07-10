@@ -22,10 +22,9 @@ _message_next_arg()
         fi
     done
     if [[ $argcount -le ${{#myargs[@]}} ]] ; then
+        _message -r $myargs[$argcount]
         if [[ $myargs[$argcount] =~ ".*file.*" || $myargs[$argcount] =~ ".*path.*" ]] ; then
             _files
-        else
-            _message -r $myargs[$argcount]
         fi
     fi
 }}
