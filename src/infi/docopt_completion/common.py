@@ -104,6 +104,17 @@ class CommandParams(object):
     def get_subcommand(self, subcommand):
         return self.subcommands.setdefault(subcommand, CommandParams())
 
+    def repr(self, indent):
+        s = " " * indent + "cmds:\n"
+        for cmd in self.subcommands:
+            s += " " * (indent+4) + "{}:\n{}\n".format(cmd, self.subcommands[cmd].repr(indent+5+len(cmd)))
+        s += " " * indent + "args: {}\n".format(self.arguments)
+        s += " " * indent + "opts: {}\n".format(self.options)
+        return s
+
+    def __repr__(self):
+        return self.repr(0)
+
 
 class CompletionGenerator(object):
     """Completion file generator base class. """
