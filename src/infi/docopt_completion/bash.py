@@ -2,7 +2,7 @@ from .common import CompletionGenerator
 import os
 import string
 
-FILE_TEMPLATE = """{0}\ncomplete -F _{1} {2}"""
+FILE_TEMPLATE = """{0}\ncomplete -o bashdefault -o default -F _{1} {2}"""
 
 SECTION_TEMPLATE = """
 _{cmd_name}()
