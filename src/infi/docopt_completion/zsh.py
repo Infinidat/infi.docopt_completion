@@ -1,5 +1,4 @@
 import os
-import glob
 from .common import CompletionGenerator
 
 # We fill the file template with the command name and the different sections
@@ -218,18 +217,27 @@ class ZshUsrShareCompletion(ZshCompletion):
         return "/usr/share/zsh/*/functions"
 
     def _get_completion_paths(self):
-        # Examples of paths we support:
-        # - /usr/share/zsh/5.0.1/functions/Completion
-        # - /usr/share/zsh/5.0.1/functions
-        # - /usr/share/zsh/functions/Completion
-        # - /usr/share/zsh/functions
-        paths_to_check = [self.get_completion_path(), self.get_completion_path().replace("/*", "")]
-        for path_to_check in paths_to_check:
-            for path in glob.glob(path_to_check):
-                path_with_completion = os.path.join(path, "Completion")
-                if os.path.exists(path_with_completion):
-                    path = path_with_completion
-                yield path
+        prefixes = [
+            os.path.join(os.path.sep, "usr"),
+            os.path.join(os.path.sep, "usr", "local"),
+            os.path.join(os.path.sep, "opt", "freeware"),
+            os.path.join(os.path.sep, "opt", "csw")
+        ]
+        infixes = [
+            "site",
+            "vendor"
+        ]
+        suffixes = [
+            "completions",
+            "functions"
+        ]
+        for prefix in prefixes:
+            for infix in infixes:
+                for suffix in suffixes:
+                    path = os.path.join(prefix, "share", "zsh",
+                                        "{}-{}".format(infix, suffix))
+                    if os.path.isdir(path):
+                        yield path
 
     def completion_path_exists(self):
         return any(os.path.exists(path) for path in self._get_completion_paths())
